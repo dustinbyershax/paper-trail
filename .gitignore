@@ -48,3 +48,7 @@ htmlcov/
 # Flask stuff:
 instance/
 *.log
+
+# LM Agent config files
+.cursor/
+.claude/
