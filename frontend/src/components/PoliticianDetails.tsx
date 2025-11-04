@@ -3,32 +3,16 @@
  * Displays comprehensive information including header, donation chart, and voting record
  */
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { VoteRecord } from './VoteRecord';
+import DonationChart from './DonationChart';
 import type { Politician } from '../types/api';
 
 interface PoliticianDetailsProps {
   politician: Politician;
   onClose: () => void;
 }
-
-// Temporary placeholder for DonationChart until Agent 4 creates it
-const DonationChart = ({ politicianId }: { politicianId: string }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Donation Chart</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="text-gray-600 text-center py-8">
-        Donation Chart - Coming from Agent 4
-        <div className="text-sm text-gray-500 mt-2">
-          (Politician ID: {politicianId})
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
 
 export function PoliticianDetails({ politician, onClose }: PoliticianDetailsProps) {
   const getPartyColor = (party: string): string => {
