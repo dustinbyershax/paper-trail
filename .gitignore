@@ -8,8 +8,13 @@ __pycache__/
 
 # Ignore downloaded bulk data files
 *.zip
-*.json
 *.csv
+
+# Ignore bulk data JSON files but allow package.json and other config files
+/contributions/*.json
+/votes/*.json
+/bills/*.json
+sql/*.json
 
 # Ignore the data directories (already in your original gitignore)
 /contributions/
@@ -17,6 +22,7 @@ __pycache__/
 /bills/
 sql/
 
+.playwright-mcp
 
 # --- Standard Python and OS Exclusions ---
 
@@ -54,6 +60,15 @@ instance/
 .claude/
 .conductor/
 .conductor.json
+
+# Temporary test screenshots
+.tmp/*.png
+
+# Frontend (React + Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.DS_Store
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,macos,windows,powershell,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,macos,windows,powershell,linux
