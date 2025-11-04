@@ -64,20 +64,24 @@ pnpm run dev  # Development server on http://localhost:5173
 ```
 
 ### Development Workflow
-1. Start Flask backend: `flask run` (port 5000)
+1. Start Flask backend: `python -m app.main` (port 5001)
 2. Start Vite dev server: `cd frontend && pnpm run dev` (port 5173)
 3. Open http://localhost:5173 in browser
+
+**Note:** Flask runs on port 5001 to avoid conflicts with macOS AirPlay Receiver.
 
 See `frontend/README.md` for detailed documentation.
 
 ### Pod Containers for deployment
+
+**Note:** Update port mappings to 5001 if deploying with the development port configuration.
 
 ```bash
 echo "paper-trail build image"
 podman build -t paper-trail -f Dockerfile
 
 echo "Create pod pod-paper-trail"
-podman pod create -p 5000:5000 --name=pod-paper-trail \
+podman pod create -p 5000:5001 --name=pod-paper-trail \
 && \
 podman pod start pod-paper-trail
 
