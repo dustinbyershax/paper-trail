@@ -1,13 +1,33 @@
 # Agent 4: Shared Components & Visualization Specialist
 
 **Agent Type:** `frontend-ts-expert` with Chart.js experience
-**Duration:** 4-6 hours
-**Dependencies:** CHECKPOINT 1 passed (Agent 1 complete)
-**Can Start:** Immediately after Agent 1 completes Phase 0 (PARALLEL with Agents 2 & 3)
+**Duration:** 2-3 hours (REDUCED from 4-6 - role significantly changed)
+**Dependencies:** CHECKPOINT 1 passed (Agent 1 complete) ✅
+**Can Start:** ✅ READY NOW (can run PARALLEL with Agents 2 & 3)
+
+## 🚨 MAJOR ROLE CHANGE: Focus on Composition, Not Creation
+
+**Phase 1 delivered shadcn/ui - Your role has fundamentally changed!**
+
+### ❌ DO NOT Create These (Already Exist in shadcn/ui):
+- ~~Header component from scratch~~
+- ~~Button component~~
+- ~~Input component~~
+- ~~Card component~~
+- ~~LoadingSpinner component~~
+- ~~Any basic UI primitives~~
+
+### ✅ DO Create These (Your New Focus):
+
+1. **Header** - COMPOSE using shadcn components (NavigationMenu, etc.)
+2. **DonationChart** - Chart.js integration (unique, not provided by shadcn)
+3. **Page Layouts** - Layout wrappers and containers
+4. **Theme Toggle** - Use existing theme-provider.tsx
+5. **Business Logic Hooks** - useDebounce, useLocalStorage, etc.
 
 ## Overview
 
-Build shared components used across the application and implement the critical DonationChart component with Chart.js integration. These components will be imported by Agents 2 and 3.
+Create COMPOSITION components and business logic that leverage the installed shadcn/ui component library. Your work focuses on unique functionality that shadcn doesn't provide.
 
 **Critical:** The DonationChart component MUST properly register Chart.js components for React 19 compatibility.
 
