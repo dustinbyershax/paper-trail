@@ -4,7 +4,7 @@
  * Supports optional topic filtering for industry-specific analysis
  */
 import { useState, useEffect } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, type TooltipItem } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { api } from '../services/api';
 import type { DonationSummary } from '../types/api';
@@ -56,25 +56,40 @@ export default function DonationChart({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadDonations = async () => {
+      if (!isMounted) return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = selectedTopic
+          ? await api.getFilteredDonationSummary(politicianId, selectedTopic)
+          : await api.getDonationSummary(politicianId);
+
+        if (isMounted) {
+          setDonations(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load donations');
+          setDonations([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     loadDonations();
+
+    return () => {
+      isMounted = false;
+    };
   }, [politicianId, selectedTopic]);
-
-  const loadDonations = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = selectedTopic
-        ? await api.getFilteredDonationSummary(politicianId, selectedTopic)
-        : await api.getDonationSummary(politicianId);
-      setDonations(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load donations');
-      setDonations([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -130,7 +145,7 @@ export default function DonationChart({
       },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: TooltipItem<'doughnut'>) => {
             const label = context.label || '';
             const value = context.parsed || 0;
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
@@ -154,7 +169,7 @@ export default function DonationChart({
               Filter by Topic:
             </label>
             <Select value={selectedTopic || ''} onValueChange={onTopicChange}>
-              <SelectTrigger id="topic-filter" className="w-full md:w-64">
+              <SelectTrigger id="topic-filter" className="w-full md:w-64" aria-label="Filter donations by topic">
                 <SelectValue placeholder="All Industries" />
               </SelectTrigger>
               <SelectContent>
@@ -169,7 +184,7 @@ export default function DonationChart({
           </div>
         )}
 
-        <div className="max-w-md mx-auto mb-6">
+        <div className="max-w-md mx-auto mb-6" role="img" aria-label="Doughnut chart showing donation breakdown by industry">
           <Doughnut data={chartData} options={chartOptions} />
         </div>
 
