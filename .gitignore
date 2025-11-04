@@ -22,6 +22,7 @@ sql/*.json
 /bills/
 sql/
 
+.playwright-mcp
 
 # --- Standard Python and OS Exclusions ---
 
