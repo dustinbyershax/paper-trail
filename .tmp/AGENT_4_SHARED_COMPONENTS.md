@@ -578,6 +578,61 @@ Run through ALL verification steps before marking complete:
 - [ ] TypeScript types exported where needed
 - [ ] Documentation clear for other agents
 
+### Browser Testing (REQUIRED)
+**Use MCP Chrome DevTools to verify all shared components work correctly:**
+
+1. **Ensure Backend and Frontend are Running:**
+   ```bash
+   # Backend should be on port 5001
+   # Frontend should be on port 5173 or 5174
+   ```
+
+2. **Test Header Component:**
+   - [ ] Navigate to http://localhost:5173/
+   - [ ] Verify header appears at top of page
+   - [ ] Click "Politician Search" link - should navigate to /
+   - [ ] Click "Donor Search" link - should navigate to /donor_search
+   - [ ] Click "Feedback" link - should navigate to /feedback
+   - [ ] Verify active link is highlighted correctly on each page
+   - [ ] Check disclaimer text is visible and properly styled
+   - [ ] Test on different screen sizes (responsive)
+
+3. **Test DonationChart Component:**
+   - [ ] Navigate to politician search and select a politician with donations
+   - [ ] Verify donation chart loads and displays correctly
+   - [ ] Check Chart.js console for errors (should be none)
+   - [ ] Verify chart legend shows industries
+   - [ ] Hover over chart sections - tooltips should show
+   - [ ] If topic filtering implemented, test all topics
+   - [ ] Test with politician who has no donations (should show message)
+   - [ ] Verify chart is responsive on different screen sizes
+
+4. **Test LoadingSpinner Component:**
+   - [ ] Should appear during API calls (search, loading donations, etc.)
+   - [ ] Verify animation is smooth and centered
+   - [ ] Check optional message displays if provided
+   - [ ] Test different size variants if implemented
+
+5. **Test Feedback Page:**
+   - [ ] Navigate to http://localhost:5173/feedback
+   - [ ] Verify page renders with header
+   - [ ] Content displays correctly
+   - [ ] Navigation works from header
+   - [ ] Take screenshot
+
+**Critical Chart.js Checks:**
+- [ ] NO console errors about Chart.js registration
+- [ ] Chart renders on first load (not blank)
+- [ ] Chart updates when data changes
+- [ ] No memory leaks (chart destroys on unmount)
+
+**Why Browser Testing is Critical for Shared Components:**
+- Chart.js registration errors only show in browser console
+- Navigation highlighting depends on React Router state
+- Responsive design must be visually verified
+- Animation smoothness can't be tested by compiler
+- Other agents depend on these components working perfectly
+
 ---
 
 ## Integration with Other Agents

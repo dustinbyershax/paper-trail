@@ -550,6 +550,39 @@ Run through ALL verification steps:
 - [ ] `.gitignore` updated with frontend artifacts
 - [ ] Project structure documented
 
+### Browser Testing (REQUIRED)
+**Use MCP Chrome DevTools to verify the application works in a real browser:**
+
+1. **Start Backend and Frontend:**
+   ```bash
+   # Terminal 1: Start Flask backend
+   source .venv/bin/activate
+   python -m app.main  # Should run on port 5001
+
+   # Terminal 2: Start Vite dev server
+   cd frontend && pnpm run dev  # Should run on port 5173 or 5174
+   ```
+
+2. **Load Database (if needed):**
+   ```bash
+   cd bin && tar -xjf sql_data.tar.bz2
+   cd sql && python ../../bin/load_sql.py
+   ```
+
+3. **Open Browser and Test:**
+   - [ ] Navigate to http://localhost:5173 (or 5174)
+   - [ ] Home page (/) loads without errors
+   - [ ] Navigate to /donor_search - loads placeholder
+   - [ ] Navigate to /feedback - loads placeholder
+   - [ ] No console errors or warnings
+   - [ ] Take screenshots of working pages
+
+**Why Browser Testing is Required:**
+- TypeScript compilation errors don't catch runtime issues
+- React component errors only appear in the browser
+- Proxy configuration issues only show during actual API calls
+- Visual layout problems can't be detected by build tools
+
 ---
 
 ## Deliverables Package for Parallel Agents

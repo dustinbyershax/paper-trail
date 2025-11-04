@@ -390,6 +390,44 @@ Run through ALL verification steps before marking complete:
 - [ ] Very long donor names handled
 - [ ] Large donation amounts formatted correctly
 
+### Browser Testing (REQUIRED)
+**Use MCP Chrome DevTools to verify the application works end-to-end:**
+
+1. **Ensure Backend and Frontend are Running:**
+   ```bash
+   # Backend should be on port 5001
+   # Frontend should be on port 5173 or 5174
+   ```
+
+2. **Test Donor Search in Browser:**
+   - [ ] Navigate to http://localhost:5173/donor_search
+   - [ ] Try searching with 1-2 characters (should not search yet)
+   - [ ] Search with 3+ characters (e.g., "Google", "Smith")
+   - [ ] Verify search results display correctly
+   - [ ] Click on a donor card to view details
+   - [ ] Verify donor details page displays:
+     - Donor information (name, type, employer, state)
+     - Contribution history table
+     - Currency formatting ($X,XXX.XX)
+     - Date formatting
+   - [ ] Test back button to return to search
+   - [ ] Verify search results are preserved
+   - [ ] Check for console errors (should be none)
+   - [ ] Take screenshots of working pages
+
+**Example Search Queries to Test:**
+- "Google" - Should find Google LLC and employees
+- "Smith" - Should find many individuals
+- "PAC" - Should find PACs
+- Test with donors who have many donations
+- Test with donors who have no donations
+
+**Why Browser Testing is Critical:**
+- Currency and date formatting only visible in browser
+- API response handling bugs only show at runtime
+- Layout issues invisible to TypeScript compiler
+- User interaction flows must be manually verified
+
 ---
 
 ## Integration with Other Agents
