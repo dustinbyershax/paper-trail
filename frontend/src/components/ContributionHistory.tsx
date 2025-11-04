@@ -1,48 +1,36 @@
 /**
  * Contribution history component
  * Displays a list of donations made by a donor with formatted amounts and dates
+ *
+ * @param donations - Array of donation records to display
+ * @param isLoading - Loading state for async donation fetch
+ * @param error - Error message if donation fetch failed
+ * @param threshold - Minimum donation amount threshold (defaults to 2000)
  */
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { formatCurrency, formatDate } from '../utils/formatters';
 import type { Donation } from '../types/api';
 
 interface ContributionHistoryProps {
   donations: Donation[];
   isLoading: boolean;
   error: string | null;
+  threshold?: number;
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+export function ContributionHistory({
+  donations,
+  isLoading,
+  error,
+  threshold = 2000
+}: ContributionHistoryProps) {
+  const thresholdDisplay = threshold ? `(> $${threshold.toLocaleString()})` : '';
 
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        timeZone: 'UTC',
-      });
-    }
-  } catch (e) {
-    console.warn('Could not parse date:', dateString);
-  }
-  return 'N/A';
-}
-
-export function ContributionHistory({ donations, isLoading, error }: ContributionHistoryProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-center">
-          Contribution History (&gt; $2000)
+          Contribution History {thresholdDisplay}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -56,8 +44,18 @@ export function ContributionHistory({ donations, isLoading, error }: Contributio
             <p className="font-semibold">Could not load contribution history: {error}</p>
           </div>
         ) : donations.length === 0 ? (
-          <div className="text-center py-8 text-gray-600">
-            <p>No contribution history found &gt; $2000 for politicians in our database.</p>
+          <div className="text-center py-8 text-gray-600 space-y-2">
+            <p className="font-medium">
+              No large contributions found {thresholdDisplay} to politicians in our database.
+            </p>
+            <p className="text-sm">
+              This donor may have:
+            </p>
+            <ul className="text-sm text-left inline-block">
+              <li>• Made smaller contributions (under ${threshold.toLocaleString()})</li>
+              <li>• Not contributed to politicians we track</li>
+              <li>• Contributed only to state/local politicians</li>
+            </ul>
           </div>
         ) : (
           <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2">

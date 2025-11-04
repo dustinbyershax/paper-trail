@@ -13,8 +13,8 @@ import type {
   VoteParams
 } from '../types/api';
 
-async function fetchJSON<T>(url: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${url}`);
+async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${url}`, options);
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
@@ -43,10 +43,11 @@ export const api = {
   /**
    * Get all donations made by a specific donor
    * @param donorId - The donor's ID
+   * @param options - Optional fetch options including signal for cancellation
    * @returns Array of donations with recipient politician information
    */
-  getDonorDonations: async (donorId: number): Promise<Donation[]> => {
-    return fetchJSON<Donation[]>(`/api/donor/${donorId}/donations`);
+  getDonorDonations: async (donorId: number, options?: RequestInit): Promise<Donation[]> => {
+    return fetchJSON<Donation[]>(`/api/donor/${donorId}/donations`, options);
   },
 
   /**

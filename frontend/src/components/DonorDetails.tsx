@@ -1,6 +1,9 @@
 /**
  * Donor details header component
  * Displays donor information with a close button to return to search
+ *
+ * @param donor - The donor object containing name, type, employer, and state
+ * @param onClose - Callback fired when the back button is clicked to return to search
  */
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';

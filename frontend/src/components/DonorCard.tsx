@@ -1,6 +1,9 @@
 /**
  * Donor card component for displaying a donor in search results
  * Shows name, type, employer (if available), and state (if available) with clickable interaction
+ *
+ * @param donor - The donor object containing name, type, employer, and state
+ * @param onSelect - Callback fired when donor is selected (clicked or Enter/Space pressed)
  */
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -12,10 +15,20 @@ interface DonorCardProps {
 }
 
 export function DonorCard({ donor, onSelect }: DonorCardProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(donor);
+    }
+  };
+
   return (
     <Card
-      className="cursor-pointer transition-all hover:shadow-md hover:border-gray-400"
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer transition-all hover:shadow-md hover:border-gray-400 focus:ring-2 focus:ring-red-600 focus:outline-none"
       onClick={() => onSelect(donor)}
+      onKeyDown={handleKeyDown}
     >
       <CardContent className="pt-6">
         <div className="flex flex-col gap-2">

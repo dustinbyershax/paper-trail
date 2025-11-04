@@ -1,8 +1,23 @@
 /**
  * Custom hook for donor search functionality
  * Manages donor search state, selected donor, and donation history
+ * Includes request cancellation to prevent memory leaks from unmounted components
+ *
+ * @returns Object containing search state, functions, and data
+ * @property query - Current search query string
+ * @property setQuery - Function to update search query
+ * @property donors - Array of donor search results
+ * @property selectedDonor - Currently selected donor (null if none)
+ * @property donations - Array of donations for selected donor
+ * @property isSearching - Loading state for donor search
+ * @property isLoadingDonations - Loading state for donation fetch
+ * @property searchError - Error message from donor search (null if no error)
+ * @property donationsError - Error message from donation fetch (null if no error)
+ * @property search - Function to trigger donor search
+ * @property selectDonor - Function to select a donor and load their donations
+ * @property clearSelection - Function to deselect current donor
  */
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '../services/api';
 import type { Donor, Donation } from '../types/api';
 
@@ -31,6 +46,15 @@ export function useDonorSearch(): UseDonorSearchResult {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [donationsError, setDonationsError] = useState<string | null>(null);
 
+  const donationAbortController = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      donationAbortController.current?.abort();
+    };
+  }, []);
+
   const search = async () => {
     if (query.length < 3) {
       setDonors([]);
@@ -52,22 +76,47 @@ export function useDonorSearch(): UseDonorSearchResult {
   };
 
   const selectDonor = async (donor: Donor) => {
+    // Cancel previous request if still pending
+    donationAbortController.current?.abort();
+
+    const abortController = new AbortController();
+    donationAbortController.current = abortController;
+
     setSelectedDonor(donor);
     setIsLoadingDonations(true);
     setDonationsError(null);
 
     try {
-      const donationData = await api.getDonorDonations(donor.donorid);
-      setDonations(donationData);
+      const donationData = await api.getDonorDonations(donor.donorid, {
+        signal: abortController.signal
+      });
+
+      // Only update state if request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setDonations(donationData);
+      }
     } catch (err) {
-      setDonationsError(err instanceof Error ? err.message : 'Failed to load donations');
-      setDonations([]);
+      // Ignore AbortError - it's expected when user navigates away quickly
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+
+      if (!abortController.signal.aborted) {
+        setDonationsError(err instanceof Error ? err.message : 'Failed to load donations');
+        setDonations([]);
+      }
     } finally {
-      setIsLoadingDonations(false);
+      if (!abortController.signal.aborted) {
+        setIsLoadingDonations(false);
+      }
     }
   };
 
   const clearSelection = () => {
+    // Cancel pending donation request
+    donationAbortController.current?.abort();
+    donationAbortController.current = null;
+
     setSelectedDonor(null);
     setDonations([]);
   };
