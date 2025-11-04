@@ -16,6 +16,11 @@ DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
+# --- Test Mode Override ---
+# When running tests, force usage of test database to prevent production data corruption
+if os.getenv("TESTING") == "true":
+    DB_NAME = "paper_trail_test"
+
 # --- Build the conn_params dictionary that all your scripts use ---
 # This dictionary is imported by your other scripts.
 conn_params = {
