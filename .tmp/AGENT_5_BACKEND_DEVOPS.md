@@ -255,6 +255,58 @@ e. Verify hot module reload works
 - [ ] API routes ABOVE catch-all route
 - [ ] Code follows existing style
 
+### Browser Testing (REQUIRED)
+**Use MCP Chrome DevTools to verify Flask serves React correctly:**
+
+1. **Build React App:**
+   ```bash
+   cd frontend && pnpm run build
+   # Should create frontend/dist directory
+   ```
+
+2. **Start Flask in Production Mode:**
+   ```bash
+   # Stop any running dev servers first
+   source .venv/bin/activate
+   FLASK_ENV=production python -m app.main
+   # Should serve on port 5001, CORS should be disabled
+   ```
+
+3. **Test Integrated Application:**
+   - [ ] Navigate to http://localhost:5001/ (Flask root)
+   - [ ] Verify React app loads (not "Hello World" or Flask template)
+   - [ ] Test all routes:
+     - http://localhost:5001/ - Politician Search
+     - http://localhost:5001/donor_search - Donor Search
+     - http://localhost:5001/feedback - Feedback page
+   - [ ] Refresh browser on each route (should NOT 404)
+   - [ ] Test politician search functionality
+   - [ ] Test donor search functionality
+   - [ ] Verify all API calls work (check Network tab)
+   - [ ] Check console for errors (should be none)
+   - [ ] Verify CORS errors do NOT appear
+
+4. **Test Development Mode (Optional but Recommended):**
+   ```bash
+   # Stop Flask
+   # Terminal 1: Start Flask in dev mode
+   FLASK_ENV=development python -m app.main
+
+   # Terminal 2: Start Vite dev server
+   cd frontend && pnpm run dev
+   ```
+   - [ ] Navigate to http://localhost:5173
+   - [ ] Verify Vite dev server can call Flask API on port 5001
+   - [ ] No CORS errors should appear
+   - [ ] All functionality works
+
+**Why This Testing is Critical:**
+- Ensures Flask catch-all route works correctly
+- Verifies static file serving from frontend/dist
+- Confirms client-side routing doesn't break on refresh
+- Tests CORS configuration for dev/prod modes
+- Validates integration between React and Flask
+
 **If ANY tests fail, STOP and fix before proceeding.**
 
 ---
