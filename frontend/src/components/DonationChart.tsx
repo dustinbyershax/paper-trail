@@ -22,16 +22,16 @@ interface DonationChartProps {
 }
 
 const COLORS = [
-  '#FF6384',
-  '#36A2EB',
-  '#FFCE56',
-  '#4BC0C0',
-  '#9966FF',
-  '#FF9F40',
-  '#FF6384',
-  '#C9CBCF',
-  '#4BC0C0',
-  '#FF6384',
+  '#FF6384', // Pink
+  '#36A2EB', // Blue
+  '#FFCE56', // Yellow
+  '#4BC0C0', // Teal
+  '#9966FF', // Purple
+  '#FF9F40', // Orange
+  '#E91E63', // Magenta
+  '#4CAF50', // Green
+  '#795548', // Brown
+  '#607D8B', // Blue Grey
 ];
 
 const TOPICS = [
