@@ -105,12 +105,16 @@ export function VoteFilters({
       {/* Subject Filter */}
       <div className="space-y-2">
         <Label className="text-sm font-medium">Subject</Label>
-        <Select value={subject} onValueChange={setSubject} disabled={isLoadingSubjects}>
+        <Select
+          value={subject || 'all'}
+          onValueChange={(value) => setSubject(value === 'all' ? '' : value)}
+          disabled={isLoadingSubjects}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="All subjects" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All subjects</SelectItem>
+            <SelectItem value="all">All subjects</SelectItem>
             {availableSubjects.map((subj) => (
               <SelectItem key={subj} value={subj}>
                 {subj}
