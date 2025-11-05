@@ -51,12 +51,12 @@ export function usePoliticianSearch(): UsePoliticianSearchResult {
     }
   }, [query]);
 
-  const selectPolitician = (politician: Politician) => {
+  const selectPolitician = useCallback((politician: Politician) => {
     setSelectedPolitician(politician);
     setComparisonPoliticians([]);
-  };
+  }, []);
 
-  const toggleComparison = (politician: Politician) => {
+  const toggleComparison = useCallback((politician: Politician) => {
     setSelectedPolitician(null);
     setComparisonPoliticians((prev) => {
       const isSelected = prev.some((p) => p.politicianid === politician.politicianid);
@@ -68,15 +68,15 @@ export function usePoliticianSearch(): UsePoliticianSearchResult {
       }
       return [...prev, politician];
     });
-  };
+  }, []);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedPolitician(null);
-  };
+  }, []);
 
-  const clearComparison = () => {
+  const clearComparison = useCallback(() => {
     setComparisonPoliticians([]);
-  };
+  }, []);
 
   const isComparing = comparisonPoliticians.length === 2;
 

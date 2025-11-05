@@ -110,7 +110,7 @@ export default function PoliticianSearch() {
     };
 
     loadFromUrl();
-  }, [entityId, comparisonIds, searchQuery]);
+  }, [entityId, comparisonIds, searchQuery, politicians, selectedPolitician, query, selectPolitician, clearSelection, toggleComparison, setInputValue, setQuery, search]);
 
   // Sync URL when politician is selected
   useEffect(() => {

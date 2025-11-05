@@ -79,7 +79,7 @@ export default function DonorSearch() {
     };
 
     loadFromUrl();
-  }, [entityId, searchQuery]);
+  }, [entityId, searchQuery, donors, selectedDonor, query, selectDonor, setInputValue, setQuery, search]);
 
   // Sync URL when donor is selected
   useEffect(() => {

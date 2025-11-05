@@ -76,7 +76,7 @@ export function useDonorSearch(): UseDonorSearchResult {
     }
   }, [query]);
 
-  const selectDonor = async (donor: Donor) => {
+  const selectDonor = useCallback(async (donor: Donor) => {
     // Cancel previous request if still pending
     donationAbortController.current?.abort();
 
@@ -111,16 +111,16 @@ export function useDonorSearch(): UseDonorSearchResult {
         setIsLoadingDonations(false);
       }
     }
-  };
+  }, []);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     // Cancel pending donation request
     donationAbortController.current?.abort();
     donationAbortController.current = null;
 
     setSelectedDonor(null);
     setDonations([]);
-  };
+  }, []);
 
   return {
     query,

@@ -10,15 +10,15 @@ import {
 describe('routing utilities', () => {
   describe('parseComparisonIds', () => {
     it('parses comma-separated IDs', () => {
-      expect(parseComparisonIds('412,300072,300011')).toEqual(['412', '300072', '300011']);
+      expect(parseComparisonIds('412,300072,300011')).toEqual([412, 300072, 300011]);
     });
 
     it('handles whitespace', () => {
-      expect(parseComparisonIds('412, 300072, 300011')).toEqual(['412', '300072', '300011']);
+      expect(parseComparisonIds('412, 300072, 300011')).toEqual([412, 300072, 300011]);
     });
 
     it('filters empty strings', () => {
-      expect(parseComparisonIds('412,,300072')).toEqual(['412', '300072']);
+      expect(parseComparisonIds('412,,300072')).toEqual([412, 300072]);
     });
 
     it('returns empty array for null', () => {
@@ -31,12 +31,12 @@ describe('routing utilities', () => {
   });
 
   describe('buildPoliticianUrl', () => {
-    it('builds politician detail URL with string ID', () => {
-      expect(buildPoliticianUrl('412')).toBe('/politician/412');
+    it('builds politician detail URL with numeric ID', () => {
+      expect(buildPoliticianUrl(412)).toBe('/politician/412');
     });
 
-    it('handles alphanumeric IDs', () => {
-      expect(buildPoliticianUrl('P000123')).toBe('/politician/P000123');
+    it('handles large numbers', () => {
+      expect(buildPoliticianUrl(300072)).toBe('/politician/300072');
     });
   });
 
@@ -52,15 +52,15 @@ describe('routing utilities', () => {
 
   describe('buildComparisonUrl', () => {
     it('builds comparison URL with two politician IDs', () => {
-      expect(buildComparisonUrl(['412', '300072'])).toBe('/politician/compare?ids=412,300072');
+      expect(buildComparisonUrl([412, 300072])).toBe('/politician/compare?ids=412,300072');
     });
 
     it('builds comparison URL with three politician IDs', () => {
-      expect(buildComparisonUrl(['412', '300072', '300011'])).toBe('/politician/compare?ids=412,300072,300011');
+      expect(buildComparisonUrl([412, 300072, 300011])).toBe('/politician/compare?ids=412,300072,300011');
     });
 
     it('handles single ID (invalid but should not crash)', () => {
-      expect(buildComparisonUrl(['412'])).toBe('/politician/compare?ids=412');
+      expect(buildComparisonUrl([412])).toBe('/politician/compare?ids=412');
     });
 
     it('handles empty array', () => {
