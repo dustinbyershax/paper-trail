@@ -148,3 +148,119 @@ class TestPoliticiansSearch:
             for politician in data:
                 full_name = f"{politician['firstname']} {politician['lastname']}"
                 assert "john" in full_name.lower()
+
+
+class TestGetPolitician:
+    """Test suite for /api/politician/<politician_id> endpoint."""
+
+    def test_get_politician_with_valid_id(self, client):
+        """Get politician returns politician data for valid ID."""
+        # First search to get a valid politician ID
+        search_response = client.get("/api/politicians/search?name=Biden")
+        search_data = json.loads(search_response.data)
+
+        if len(search_data) > 0:
+            politician_id = search_data[0]['politicianid']
+            response = client.get(f"/api/politician/{politician_id}")
+            assert response.status_code == 200
+
+            data = json.loads(response.data)
+            assert isinstance(data, dict)
+
+            # Verify all required fields are present
+            required_fields = [
+                "politicianid",
+                "firstname",
+                "lastname",
+                "party",
+                "state",
+                "role",
+                "isactive",
+            ]
+            for field in required_fields:
+                assert field in data
+
+    def test_get_politician_returns_correct_data(self, client):
+        """Get politician returns the correct politician data."""
+        # First search to get a specific politician
+        search_response = client.get("/api/politicians/search?name=Biden")
+        search_data = json.loads(search_response.data)
+
+        if len(search_data) > 0:
+            expected_politician = search_data[0]
+            politician_id = expected_politician['politicianid']
+
+            response = client.get(f"/api/politician/{politician_id}")
+            assert response.status_code == 200
+
+            data = json.loads(response.data)
+
+            # Verify the data matches what we found in search
+            assert data['politicianid'] == expected_politician['politicianid']
+            assert data['firstname'] == expected_politician['firstname']
+            assert data['lastname'] == expected_politician['lastname']
+            assert data['party'] == expected_politician['party']
+            assert data['state'] == expected_politician['state']
+            assert data['role'] == expected_politician['role']
+            assert data['isactive'] == expected_politician['isactive']
+
+    def test_get_politician_with_nonexistent_id(self, client):
+        """Get politician returns 404 for nonexistent politician ID."""
+        response = client.get("/api/politician/999999999")
+        assert response.status_code == 404
+
+        data = json.loads(response.data)
+        assert "error" in data
+        assert data["error"] == "Politician not found"
+
+    def test_get_politician_with_valid_numeric_id(self, client):
+        """Get politician handles valid numeric IDs correctly."""
+        response = client.get("/api/politician/999999")
+        # Should return 404 if ID doesn't exist, not a 500 error
+        assert response.status_code in [200, 404]
+
+    def test_sql_injection_in_politician_id(self, client):
+        """SQL injection attempt in politician ID is blocked by Flask routing."""
+        malicious_inputs = [
+            "'; DROP TABLE Politicians; --",
+            "' OR '1'='1",
+            "' UNION SELECT * FROM Politicians --",
+            "Biden'; UPDATE Politicians SET Party='Hacked' --",
+        ]
+
+        for malicious_input in malicious_inputs:
+            response = client.get(f"/api/politician/{malicious_input}")
+            # Flask routing should reject non-integer values with 404
+            assert response.status_code == 404
+
+    def test_get_politician_with_invalid_id_type(self, client):
+        """Get politician with non-integer ID returns 404."""
+        invalid_ids = ["invalid", "Test%", "Test_", "O'Brien", "Smith-Jones", "abc123"]
+
+        for politician_id in invalid_ids:
+            response = client.get(f"/api/politician/{politician_id}")
+            # Flask routing rejects non-integer IDs with 404
+            assert response.status_code == 404
+
+    def test_get_politician_with_negative_id(self, client):
+        """Get politician with negative ID is rejected by Flask routing."""
+        response = client.get("/api/politician/-1")
+        # Flask routing rejects negative IDs for <int:> converters
+        assert response.status_code == 404
+
+    def test_get_politician_consistency_with_search(self, client):
+        """Get politician returns data consistent with search results."""
+        # Search for multiple politicians
+        search_response = client.get("/api/politicians/search?name=Jo")
+        search_data = json.loads(search_response.data)
+
+        if len(search_data) >= 2:
+            # Get details for first two politicians
+            for politician in search_data[:2]:
+                politician_id = politician['politicianid']
+                response = client.get(f"/api/politician/{politician_id}")
+                assert response.status_code == 200
+
+                data = json.loads(response.data)
+                # Verify data is identical to search result
+                assert data == politician

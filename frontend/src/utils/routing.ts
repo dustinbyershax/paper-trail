@@ -12,30 +12,30 @@ export type EntityType = 'politician' | 'donor';
 
 /**
  * Parse comparison IDs from query parameter.
- * Returns array of politician IDs as strings (matches Politician.politicianid type).
+ * Returns array of politician IDs as numbers (matches Politician.politicianid type).
  */
-export function parseComparisonIds(idsParam: string | null): string[] {
+export function parseComparisonIds(idsParam: string | null): number[] {
   if (!idsParam || idsParam.trim() === '') return [];
   return idsParam
     .split(',')
-    .map((id) => id.trim())
-    .filter((id) => id.length > 0);
+    .map((id) => parseInt(id.trim(), 10))
+    .filter((id) => !isNaN(id));
 }
 
 /**
  * Build comparison URL from politician IDs.
- * Politicians use string IDs (e.g., "412", "P000123").
+ * Politicians use numeric IDs.
  */
-export function buildComparisonUrl(politicianIds: string[]): string {
+export function buildComparisonUrl(politicianIds: number[]): string {
   const ids = politicianIds.join(',');
   return `/politician/compare?ids=${ids}`;
 }
 
 /**
  * Build politician detail URL.
- * Politicians use string IDs.
+ * Politicians use numeric IDs.
  */
-export function buildPoliticianUrl(politicianId: string): string {
+export function buildPoliticianUrl(politicianId: number): string {
   return `/politician/${politicianId}`;
 }
 
@@ -66,9 +66,9 @@ export function buildSearchUrl(
 export interface RouteState {
   entityId?: string;
   searchQuery?: string;
-  comparisonIds: string[];
+  comparisonIds: number[];
   navigateToEntity: (id: string | number, entityType: EntityType) => void;
-  navigateToComparison: (ids: string[]) => void;
+  navigateToComparison: (ids: number[]) => void;
   navigateToSearch: (entityType: EntityType, query?: string) => void;
   navigateBack: () => void;
 }
@@ -94,12 +94,12 @@ export function useRouteState(): RouteState {
     navigateToEntity: (id: string | number, entityType: EntityType) => {
       const url =
         entityType === 'politician'
-          ? buildPoliticianUrl(String(id))
+          ? buildPoliticianUrl(Number(id))
           : buildDonorUrl(Number(id));
       navigate(url, { replace: true });
     },
 
-    navigateToComparison: (ids: string[]) => {
+    navigateToComparison: (ids: number[]) => {
       navigate(buildComparisonUrl(ids), { replace: true });
     },
 

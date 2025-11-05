@@ -88,6 +88,35 @@ def search_politicians():
         if conn:
             conn.close()
 
+@app.route('/api/politician/<int:politician_id>')
+def get_politician(politician_id):
+    """Gets a single politician by ID."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = """
+            SELECT PoliticianID, FirstName, LastName, Party, State, Role, IsActive
+            FROM Politicians
+            WHERE PoliticianID = %s;
+        """
+        cur.execute(sql, (politician_id,))
+        politician = cur.fetchone()
+        cur.close()
+
+        if politician is None:
+            return jsonify({"error": "Politician not found"}), 404
+
+        return jsonify(dict(politician))
+
+    except (Exception, psycopg2.Error) as e:
+        print(f"Error fetching politician: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
 @app.route('/api/donors/search')
 def search_donors_route():
     """Searches for donors by name."""
@@ -122,11 +151,47 @@ def search_donors_route():
                 "employer": d['employer'],
                 "state": d['state']
             })
-            
+
         return jsonify(donor_list)
 
     except (Exception, psycopg2.Error) as e:
         print(f"Error searching donors: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/donor/<int:donor_id>')
+def get_donor(donor_id):
+    """Gets a single donor by ID."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = """
+            SELECT DonorID, Name, DonorType, Employer, State
+            FROM Donors
+            WHERE DonorID = %s;
+        """
+        cur.execute(sql, (donor_id,))
+        donor = cur.fetchone()
+        cur.close()
+
+        if donor is None:
+            return jsonify({"error": "Donor not found"}), 404
+
+        # Format keys to lowercase to match the JavaScript
+        return jsonify({
+            "donorid": donor['donorid'],
+            "name": donor['name'],
+            "donortype": donor['donortype'],
+            "employer": donor['employer'],
+            "state": donor['state']
+        })
+
+    except (Exception, psycopg2.Error) as e:
+        print(f"Error fetching donor: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -180,7 +245,7 @@ def get_donor_contributions(donor_id):
         if conn:
             conn.close()
 
-@app.route('/api/politician/<string:politician_id>/votes')
+@app.route('/api/politician/<int:politician_id>/votes')
 def get_politician_votes(politician_id):
     """Gets paginated and filtered vote history for a politician."""
     conn = None
@@ -275,7 +340,7 @@ def get_politician_votes(politician_id):
         if conn:
             conn.close()
 
-@app.route('/api/politician/<string:politician_id>/donations/summary')
+@app.route('/api/politician/<int:politician_id>/donations/summary')
 def get_donation_summary(politician_id):
     """Gets UNFILTERED donation summary, grouped by INDUSTRY."""
     conn = None
@@ -294,30 +359,27 @@ def get_donation_summary(politician_id):
             ORDER BY TotalAmount DESC;
         """
 
-        # Convert politician_id to int if it's a string
-        politician_id_int = int(politician_id) if isinstance(politician_id, str) else politician_id
-        
         # Debug: Check if donations exist for this politician (using lowercase table name)
         check_sql = "SELECT COUNT(*) FROM donations WHERE PoliticianID = %s;"
-        cur.execute(check_sql, (politician_id_int,))
+        cur.execute(check_sql, (politician_id,))
         donation_count = cur.fetchone()[0]
-        print(f"DEBUG: Total donations for politician_id {politician_id_int}: {donation_count}")
-        
+        print(f"DEBUG: Total donations for politician_id {politician_id}: {donation_count}")
+
         # Debug: Check if donors have Industry set (using lowercase table names)
         check_industry_sql = """
             SELECT COUNT(*) FROM donations t
             JOIN donors d ON t.DonorID = d.DonorID
             WHERE t.PoliticianID = %s AND d.Industry IS NOT NULL;
         """
-        cur.execute(check_industry_sql, (politician_id_int,))
+        cur.execute(check_industry_sql, (politician_id,))
         industry_count = cur.fetchone()[0]
         print(f"DEBUG: Donations with Industry set: {industry_count}")
-        
+
         # Execute the query
-        cur.execute(sql, (politician_id_int,))
+        cur.execute(sql, (politician_id,))
         summary_data = cur.fetchall()
-        
-        print(f"DEBUG: Query returned {len(summary_data)} rows for politician_id {politician_id_int}")
+
+        print(f"DEBUG: Query returned {len(summary_data)} rows for politician_id {politician_id}")
         if len(summary_data) > 0:
             print(f"DEBUG: First row: {summary_data[0]}")
         else:
@@ -345,7 +407,7 @@ def get_donation_summary(politician_id):
         if conn:
             conn.close()
 
-@app.route('/api/politician/<string:politician_id>/donations/summary/filtered')
+@app.route('/api/politician/<int:politician_id>/donations/summary/filtered')
 def get_filtered_donation_summary(politician_id):
     """Gets donation summary filtered by a bill topic."""
     topic = request.args.get('topic')
@@ -373,9 +435,7 @@ def get_filtered_donation_summary(politician_id):
             ORDER BY TotalAmount DESC;
         """
 
-        # Convert politician_id to int if it's a string
-        politician_id_int = int(politician_id) if isinstance(politician_id, str) else politician_id
-        cur.execute(sql, (politician_id_int, industries))
+        cur.execute(sql, (politician_id, industries))
         summary_data = cur.fetchall()
 
         summary_list = [

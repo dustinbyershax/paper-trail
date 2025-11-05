@@ -32,12 +32,30 @@ export const api = {
   },
 
   /**
+   * Get a single politician by ID
+   * @param politicianId - The politician's ID
+   * @returns Politician data
+   */
+  getPolitician: async (politicianId: number): Promise<Politician> => {
+    return fetchJSON<Politician>(`/api/politician/${politicianId}`);
+  },
+
+  /**
    * Search for donors by name
    * @param query - Search query (minimum 3 characters)
    * @returns Array of matching donors
    */
   searchDonors: async (query: string): Promise<Donor[]> => {
     return fetchJSON<Donor[]>(`/api/donors/search?name=${encodeURIComponent(query)}`);
+  },
+
+  /**
+   * Get a single donor by ID
+   * @param donorId - The donor's ID
+   * @returns Donor data
+   */
+  getDonor: async (donorId: number): Promise<Donor> => {
+    return fetchJSON<Donor>(`/api/donor/${donorId}`);
   },
 
   /**
@@ -57,7 +75,7 @@ export const api = {
    * @returns Paginated vote response with metadata
    */
   getPoliticianVotes: async (
-    politicianId: string,
+    politicianId: number,
     params: VoteParams = {}
   ): Promise<VoteResponse> => {
     const searchParams = new URLSearchParams();
@@ -84,7 +102,7 @@ export const api = {
    * @param politicianId - The politician's ID
    * @returns Array of industry donation summaries sorted by total amount
    */
-  getDonationSummary: async (politicianId: string): Promise<DonationSummary[]> => {
+  getDonationSummary: async (politicianId: number): Promise<DonationSummary[]> => {
     return fetchJSON<DonationSummary[]>(`/api/politician/${politicianId}/donations/summary`);
   },
 
@@ -95,7 +113,7 @@ export const api = {
    * @returns Array of industry donation summaries for topic-related industries
    */
   getFilteredDonationSummary: async (
-    politicianId: string,
+    politicianId: number,
     topic: string
   ): Promise<DonationSummary[]> => {
     return fetchJSON<DonationSummary[]>(

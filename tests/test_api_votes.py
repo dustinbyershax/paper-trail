@@ -160,11 +160,11 @@ class TestPoliticianVotes:
         assert isinstance(data, dict)
 
     def test_sql_injection_in_politician_id(self, client):
-        """SQL injection in politician_id parameter is safely handled."""
+        """SQL injection in politician_id parameter is blocked by Flask routing."""
         malicious_id = "1'; DROP TABLE votes; --"
         response = client.get(f"/api/politician/{malicious_id}/votes")
-        assert response.status_code in [200, 500]
-        # Should not crash the application
+        # Flask routing rejects non-integer IDs with 404
+        assert response.status_code == 404
 
     def test_sql_injection_in_sort_parameter(self, client):
         """SQL injection in sort parameter is prevented."""

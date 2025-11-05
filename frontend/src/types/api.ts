@@ -4,7 +4,7 @@
  */
 
 export interface Politician {
-  politicianid: string;
+  politicianid: number;
   firstname: string;
   lastname: string;
   party: string;

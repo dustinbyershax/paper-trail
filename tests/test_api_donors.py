@@ -134,6 +134,112 @@ class TestDonorsSearch:
                 assert "corp" in donor["name"].lower()
 
 
+class TestGetDonor:
+    """Test suite for /api/donor/<donor_id> endpoint."""
+
+    def test_get_donor_with_valid_id(self, client):
+        """Get donor returns donor data for valid ID."""
+        # First search to get a valid donor ID
+        search_response = client.get("/api/donors/search?name=Corp")
+        search_data = json.loads(search_response.data)
+
+        if len(search_data) > 0:
+            donor_id = search_data[0]['donorid']
+            response = client.get(f"/api/donor/{donor_id}")
+            assert response.status_code == 200
+
+            data = json.loads(response.data)
+            assert isinstance(data, dict)
+
+            # Verify all required fields are present
+            required_fields = ["donorid", "name", "donortype", "employer", "state"]
+            for field in required_fields:
+                assert field in data
+
+    def test_get_donor_returns_correct_data(self, client):
+        """Get donor returns the correct donor data."""
+        # First search to get a specific donor
+        search_response = client.get("/api/donors/search?name=Corp")
+        search_data = json.loads(search_response.data)
+
+        if len(search_data) > 0:
+            expected_donor = search_data[0]
+            donor_id = expected_donor['donorid']
+
+            response = client.get(f"/api/donor/{donor_id}")
+            assert response.status_code == 200
+
+            data = json.loads(response.data)
+
+            # Verify the data matches what we found in search
+            assert data['donorid'] == expected_donor['donorid']
+            assert data['name'] == expected_donor['name']
+            assert data['donortype'] == expected_donor['donortype']
+            assert data['employer'] == expected_donor['employer']
+            assert data['state'] == expected_donor['state']
+
+    def test_get_donor_with_nonexistent_id(self, client):
+        """Get donor returns 404 for nonexistent donor ID."""
+        response = client.get("/api/donor/999999999")
+        assert response.status_code == 404
+
+        data = json.loads(response.data)
+        assert "error" in data
+        assert data["error"] == "Donor not found"
+
+    def test_get_donor_with_invalid_id_type(self, client):
+        """Get donor with non-integer ID returns 404."""
+        response = client.get("/api/donor/invalid")
+        assert response.status_code == 404
+
+    def test_sql_injection_in_donor_id(self, client):
+        """SQL injection attempt in donor ID is blocked by Flask routing."""
+        malicious_inputs = [
+            "1'; DROP TABLE Donors; --",
+            "1 OR 1=1",
+            "1 UNION SELECT * FROM Donors",
+            "'; DELETE FROM Donors WHERE '1'='1",
+        ]
+
+        for malicious_input in malicious_inputs:
+            response = client.get(f"/api/donor/{malicious_input}")
+            # Flask routing should reject non-integer values with 404
+            assert response.status_code == 404
+
+    def test_get_donor_with_zero_id(self, client):
+        """Get donor with zero ID returns 404 or data."""
+        response = client.get("/api/donor/0")
+        # Should return 404 if ID 0 doesn't exist
+        assert response.status_code in [200, 404]
+
+        if response.status_code == 404:
+            data = json.loads(response.data)
+            assert "error" in data
+
+    def test_get_donor_with_negative_id(self, client):
+        """Get donor with negative ID is rejected by Flask routing."""
+        response = client.get("/api/donor/-1")
+        # Flask routing rejects negative IDs for <int:> converters
+        assert response.status_code == 404
+
+    def test_get_donor_consistency_with_search(self, client):
+        """Get donor returns data consistent with search results."""
+        # Search for multiple donors
+        search_response = client.get("/api/donors/search?name=LLC")
+        search_data = json.loads(search_response.data)
+
+        if len(search_data) >= 2:
+            # Get details for first two donors
+            for donor in search_data[:2]:
+                donor_id = donor['donorid']
+                response = client.get(f"/api/donor/{donor_id}")
+                assert response.status_code == 200
+
+                data = json.loads(response.data)
+                # Verify data is identical to search result
+                assert data == donor
+
+
 class TestDonorDonations:
     """Test suite for /api/donor/<donor_id>/donations endpoint."""
 

@@ -50,13 +50,29 @@ export default function PoliticianSearch() {
 
   // Hydrate state from URL on mount and URL changes
   useEffect(() => {
-    const loadFromUrl = () => {
+    const loadFromUrl = async () => {
       if (entityId) {
-        // URL contains politician ID, but we need search results first
-        // Find politician in current search results
-        const politician = politicians.find((p) => p.politicianid === entityId);
-        if (politician && selectedPolitician?.politicianid !== entityId) {
+        // URL contains politician ID
+        const politicianId = Number(entityId);
+
+        // Check if already selected
+        if (selectedPolitician?.politicianid === politicianId) {
+          return;
+        }
+
+        // Try to find in search results first
+        const politician = politicians.find((p) => p.politicianid === politicianId);
+        if (politician) {
           selectPolitician(politician);
+          return;
+        }
+
+        // Not in search results - fetch directly from API (cold start)
+        try {
+          const fetchedPolitician = await api.getPolitician(politicianId);
+          selectPolitician(fetchedPolitician);
+        } catch (err) {
+          console.error('Failed to load politician from URL:', err);
         }
       } else if (comparisonIds.length >= 2) {
         // URL contains comparison IDs
@@ -68,6 +84,17 @@ export default function PoliticianSearch() {
         if (foundPoliticians.length >= 2) {
           clearSelection();
           foundPoliticians.forEach(toggleComparison);
+        } else if (foundPoliticians.length === 0) {
+          // Cold start - fetch politicians from API
+          try {
+            const fetchedPoliticians = await Promise.all(
+              comparisonIds.map((id) => api.getPolitician(id))
+            );
+            clearSelection();
+            fetchedPoliticians.forEach(toggleComparison);
+          } catch (err) {
+            console.error('Failed to load comparison politicians from URL:', err);
+          }
         }
       } else if (searchQuery && searchQuery !== query) {
         // Set search query from URL

@@ -56,11 +56,11 @@ class TestDonationSummary:
         assert isinstance(data, list)
 
     def test_sql_injection_in_politician_id(self, client):
-        """SQL injection in politician_id is safely handled."""
+        """SQL injection in politician_id is blocked by Flask routing."""
         malicious_id = "1'; DROP TABLE donations; --"
         response = client.get(f"/api/politician/{malicious_id}/donations/summary")
-        assert response.status_code in [200, 500]
-        # Should not crash the application
+        # Flask routing rejects non-integer IDs with 404
+        assert response.status_code == 404
 
 
 class TestFilteredDonationSummary:
@@ -161,12 +161,13 @@ class TestFilteredDonationSummary:
                 assert item["industry"] in expected_industries
 
     def test_sql_injection_in_politician_id_filtered(self, client):
-        """SQL injection in politician_id for filtered endpoint is safely handled."""
+        """SQL injection in politician_id for filtered endpoint is blocked by Flask routing."""
         malicious_id = "1'; DROP TABLE donations; --"
         response = client.get(
             f"/api/politician/{malicious_id}/donations/summary/filtered?topic=Health"
         )
-        assert response.status_code in [200, 500]
+        # Flask routing rejects non-integer IDs with 404
+        assert response.status_code == 404
 
     def test_sql_injection_in_topic_parameter(self, client):
         """SQL injection in topic parameter is safely handled."""
