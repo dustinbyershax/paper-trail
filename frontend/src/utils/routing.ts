@@ -6,27 +6,6 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 /**
- * Type-safe route parameters
- */
-export interface RouteParams {
-  id?: string;
-}
-
-/**
- * Type-safe query parameters for search
- */
-export interface SearchQueryParams {
-  search?: string;
-}
-
-/**
- * Type-safe query parameters for comparison mode
- */
-export interface ComparisonQueryParams {
-  ids: string; // Comma-separated list: "412,300072,300011"
-}
-
-/**
  * Entity types supported by the routing system
  */
 export type EntityType = 'politician' | 'donor';
@@ -100,7 +79,7 @@ export interface RouteState {
  */
 export function useRouteState(): RouteState {
   const navigate = useNavigate();
-  const params = useParams<RouteParams>();
+  const params = useParams();
   const [searchParams] = useSearchParams();
 
   return {
