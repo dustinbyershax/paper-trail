@@ -79,7 +79,8 @@ export default function DonorSearch() {
     };
 
     loadFromUrl();
-  }, [entityId, searchQuery, donors, selectedDonor, query, selectDonor, setInputValue, setQuery, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entityId, searchQuery, donors, selectedDonor, selectDonor]);
 
   // Sync URL when donor is selected
   useEffect(() => {

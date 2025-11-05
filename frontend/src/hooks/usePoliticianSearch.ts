@@ -15,7 +15,7 @@ interface UsePoliticianSearchResult {
   isComparing: boolean;
   isLoading: boolean;
   error: string | null;
-  search: () => Promise<void>;
+  search: (searchQuery?: string) => Promise<void>;
   selectPolitician: (politician: Politician) => void;
   toggleComparison: (politician: Politician) => void;
   clearSelection: () => void;

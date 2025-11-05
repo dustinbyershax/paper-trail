@@ -31,7 +31,7 @@ interface UseDonorSearchResult {
   isLoadingDonations: boolean;
   searchError: string | null;
   donationsError: string | null;
-  search: () => Promise<void>;
+  search: (searchQuery?: string) => Promise<void>;
   selectDonor: (donor: Donor) => void;
   clearSelection: () => void;
 }
