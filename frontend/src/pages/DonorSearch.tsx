@@ -2,6 +2,7 @@
  * Donor Search page
  * Allows users to search for donors and view their donation history
  */
+import { useEffect, useMemo } from 'react';
 import { useDonorSearch } from '../hooks/useDonorSearch';
 import { DonorCard } from '../components/DonorCard';
 import { DonorDetails } from '../components/DonorDetails';
@@ -9,6 +10,10 @@ import { ContributionHistory } from '../components/ContributionHistory';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { useRouteState } from '../utils/routing';
+import { debounce } from '../utils/debounce';
+import { api } from '../services/api';
+import type { Donor } from '../types/api';
 
 export default function DonorSearch() {
   const {
@@ -26,13 +31,81 @@ export default function DonorSearch() {
     clearSelection,
   } = useDonorSearch();
 
+  const {
+    entityId,
+    searchQuery,
+    navigateToEntity,
+    navigateToSearch,
+    navigateBack,
+  } = useRouteState();
+
+  // Hydrate state from URL on mount and URL changes
+  useEffect(() => {
+    const loadFromUrl = async () => {
+      if (entityId) {
+        // Load donor by ID from URL
+        try {
+          const donorId = parseInt(entityId, 10);
+          if (!isNaN(donorId)) {
+            const donor = await api.getDonor(donorId);
+            selectDonor(donor);
+          }
+        } catch (err) {
+          console.error('Failed to load donor from URL:', err);
+        }
+      } else if (searchQuery && searchQuery !== query) {
+        // Set search query from URL
+        setQuery(searchQuery);
+        // Trigger search if query is different
+        if (searchQuery.length >= 3) {
+          search();
+        }
+      }
+    };
+
+    loadFromUrl();
+  }, [entityId, searchQuery]);
+
+  // Sync URL when donor is selected
+  useEffect(() => {
+    if (selectedDonor && !entityId) {
+      navigateToEntity(selectedDonor.donorid, 'donor');
+    }
+  }, [selectedDonor, entityId, navigateToEntity]);
+
+  // Debounced search URL update
+  const debouncedNavigate = useMemo(
+    () =>
+      debounce((searchTerm: string) => {
+        if (searchTerm.length >= 3) {
+          navigateToSearch('donor', searchTerm);
+        } else if (searchTerm.length === 0) {
+          navigateToSearch('donor');
+        }
+      }, 500),
+    [navigateToSearch]
+  );
+
+  // Listen for donor selection from command palette
+  useEffect(() => {
+    const handleCommandSelection = (event: Event) => {
+      const customEvent = event as CustomEvent<Donor>;
+      selectDonor(customEvent.detail);
+    };
+
+    window.addEventListener('selectDonorFromCommand', handleCommandSelection);
+    return () => window.removeEventListener('selectDonorFromCommand', handleCommandSelection);
+  }, [selectDonor]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     await search();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const value = e.target.value;
+    setQuery(value);
+    debouncedNavigate(value);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -42,13 +115,18 @@ export default function DonorSearch() {
     }
   };
 
+  const handleClearSelection = () => {
+    clearSelection();
+    navigateBack();
+  };
+
   // If a donor is selected, show the details view
   if (selectedDonor) {
     return (
       <div className="container mx-auto px-4 py-8">
         <DonorDetails
           donor={selectedDonor}
-          onClose={clearSelection}
+          onClose={handleClearSelection}
         />
         <ContributionHistory
           donations={donations}

@@ -27,7 +27,7 @@ export default function Header() {
           <div className="flex items-center gap-6">
             <nav className="flex gap-6">
               <NavLink
-                to="/"
+                to="/politician"
                 className={({ isActive }) =>
                   isActive
                     ? 'font-bold underline underline-offset-4'
@@ -37,7 +37,7 @@ export default function Header() {
                 Politicians
               </NavLink>
               <NavLink
-                to="/donor_search"
+                to="/donor"
                 className={({ isActive }) =>
                   isActive
                     ? 'font-bold underline underline-offset-4'

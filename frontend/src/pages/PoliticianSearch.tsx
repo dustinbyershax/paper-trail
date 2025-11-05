@@ -3,7 +3,7 @@
  * Allows users to search for politicians and view their voting records and donation data
  * Supports comparison mode for side-by-side politician analysis
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { usePoliticianSearch } from '../hooks/usePoliticianSearch';
 import { PoliticianCard } from '../components/PoliticianCard';
 import { PoliticianDetails } from '../components/PoliticianDetails';
@@ -14,6 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton';
 import { Badge } from '../components/ui/badge';
 import { Search, GitCompare, X } from 'lucide-react';
+import { useRouteState } from '../utils/routing';
+import { debounce } from '../utils/debounce';
+import { api } from '../services/api';
 import type { Politician } from '../types/api';
 
 export default function PoliticianSearch() {
@@ -33,7 +36,80 @@ export default function PoliticianSearch() {
     clearComparison,
   } = usePoliticianSearch();
 
+  const {
+    entityId,
+    searchQuery,
+    comparisonIds,
+    navigateToEntity,
+    navigateToComparison,
+    navigateToSearch,
+    navigateBack,
+  } = useRouteState();
+
   const [comparisonMode, setComparisonMode] = useState(false);
+
+  // Hydrate state from URL on mount and URL changes
+  useEffect(() => {
+    const loadFromUrl = async () => {
+      if (entityId) {
+        // Load politician by ID from URL
+        try {
+          const politician = await api.getPolitician(entityId);
+          selectPolitician(politician);
+        } catch (err) {
+          console.error('Failed to load politician from URL:', err);
+        }
+      } else if (comparisonIds.length >= 2) {
+        // Load comparison mode from URL
+        try {
+          const politicians = await Promise.all(
+            comparisonIds.map((id) => api.getPolitician(id))
+          );
+          clearSelection();
+          politicians.forEach(toggleComparison);
+        } catch (err) {
+          console.error('Failed to load comparison from URL:', err);
+        }
+      } else if (searchQuery && searchQuery !== query) {
+        // Set search query from URL
+        setQuery(searchQuery);
+        // Trigger search if query is different
+        if (searchQuery.length >= 2) {
+          search();
+        }
+      }
+    };
+
+    loadFromUrl();
+  }, [entityId, comparisonIds, searchQuery]);
+
+  // Sync URL when politician is selected
+  useEffect(() => {
+    if (selectedPolitician && !entityId) {
+      navigateToEntity(selectedPolitician.politicianid, 'politician');
+    }
+  }, [selectedPolitician, entityId, navigateToEntity]);
+
+  // Sync URL when comparison starts
+  useEffect(() => {
+    if (isComparing && comparisonIds.length === 0) {
+      const ids = comparisonPoliticians.map((p) => p.politicianid);
+      navigateToComparison(ids);
+    }
+  }, [isComparing, comparisonIds.length, comparisonPoliticians, navigateToComparison]);
+
+  // Debounced search URL update
+  const debouncedNavigate = useMemo(
+    () =>
+      debounce((searchTerm: string) => {
+        if (searchTerm.length >= 2) {
+          navigateToSearch('politician', searchTerm);
+        } else if (searchTerm.length === 0) {
+          navigateToSearch('politician');
+        }
+      }, 500),
+    [navigateToSearch]
+  );
 
   // Listen for politician selection from command palette
   useEffect(() => {
@@ -52,7 +128,9 @@ export default function PoliticianSearch() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const value = e.target.value;
+    setQuery(value);
+    debouncedNavigate(value);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -72,6 +150,12 @@ export default function PoliticianSearch() {
   const handleExitComparison = () => {
     clearComparison();
     setComparisonMode(false);
+    navigateBack();
+  };
+
+  const handleClearSelection = () => {
+    clearSelection();
+    navigateBack();
   };
 
   // If comparing two politicians, show the comparison view
@@ -92,7 +176,7 @@ export default function PoliticianSearch() {
       <div className="container mx-auto px-4 py-8">
         <PoliticianDetails
           politician={selectedPolitician}
-          onClose={clearSelection}
+          onClose={handleClearSelection}
         />
       </div>
     );

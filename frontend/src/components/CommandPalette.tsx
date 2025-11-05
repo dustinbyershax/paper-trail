@@ -18,12 +18,9 @@ import {
 import { api } from '../services/api';
 import type { Politician, Donor } from '../types/api';
 import { useTheme } from './providers/theme-provider';
+import { buildPoliticianUrl, buildDonorUrl } from '../utils/routing';
 
-interface CommandPaletteProps {
-  onSelectPolitician?: (politician: Politician) => void;
-}
-
-export function CommandPalette({ onSelectPolitician }: CommandPaletteProps) {
+export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [politicians, setPoliticians] = useState<Politician[]>([]);
@@ -77,19 +74,27 @@ export function CommandPalette({ onSelectPolitician }: CommandPaletteProps) {
   const handleSelectPolitician = useCallback((politician: Politician) => {
     setOpen(false);
     setSearch('');
-    if (onSelectPolitician) {
-      onSelectPolitician(politician);
-    } else {
-      navigate('/');
-      setTimeout(() => onSelectPolitician?.(politician), 100);
-    }
-  }, [navigate, onSelectPolitician]);
+
+    // Navigate to politician detail URL with minimal history
+    navigate(buildPoliticianUrl(politician.politicianid), { replace: true });
+
+    // Dispatch event for backward compatibility
+    window.dispatchEvent(
+      new CustomEvent('selectPoliticianFromCommand', { detail: politician })
+    );
+  }, [navigate]);
 
   const handleSelectDonor = useCallback((donor: Donor) => {
     setOpen(false);
     setSearch('');
-    navigate('/donor_search');
-    // Note: Donor detail view would need to be implemented separately
+
+    // Navigate to donor detail URL with minimal history
+    navigate(buildDonorUrl(donor.donorid), { replace: true });
+
+    // Dispatch event for backward compatibility
+    window.dispatchEvent(
+      new CustomEvent('selectDonorFromCommand', { detail: donor })
+    );
   }, [navigate]);
 
   const handleToggleTheme = useCallback(() => {
@@ -99,12 +104,12 @@ export function CommandPalette({ onSelectPolitician }: CommandPaletteProps) {
 
   const handleNavigateHome = useCallback(() => {
     setOpen(false);
-    navigate('/');
+    navigate('/politician');
   }, [navigate]);
 
   const handleNavigateDonorSearch = useCallback(() => {
     setOpen(false);
-    navigate('/donor_search');
+    navigate('/donor');
   }, [navigate]);
 
   return (
