@@ -2,7 +2,7 @@
  * Donor Search page
  * Allows users to search for donors and view their donation history
  */
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useDonorSearch } from '../hooks/useDonorSearch';
 import { DonorCard } from '../components/DonorCard';
 import { DonorDetails } from '../components/DonorDetails';
@@ -11,7 +11,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { useRouteState } from '../utils/routing';
-import { debounce } from '../utils/debounce';
 import { api } from '../services/api';
 import type { Donor } from '../types/api';
 
@@ -38,6 +37,9 @@ export default function DonorSearch() {
     navigateToSearch,
     navigateBack,
   } = useRouteState();
+
+  // Local input state - this is the source of truth for the input field
+  const [inputValue, setInputValue] = useState(query);
 
   // Hydrate state from URL on mount and URL changes
   useEffect(() => {
@@ -67,12 +69,17 @@ export default function DonorSearch() {
         }
       } else if (searchQuery && searchQuery !== query) {
         // Set search query from URL
+        setInputValue(searchQuery);
         setQuery(searchQuery);
+        // Trigger search if query is valid
+        if (searchQuery.length >= 3) {
+          search(searchQuery);
+        }
       }
     };
 
     loadFromUrl();
-  }, [entityId, searchQuery, donors]);
+  }, [entityId, searchQuery]);
 
   // Sync URL when donor is selected
   useEffect(() => {
@@ -80,19 +87,6 @@ export default function DonorSearch() {
       navigateToEntity(selectedDonor.donorid, 'donor');
     }
   }, [selectedDonor, entityId, navigateToEntity]);
-
-  // Debounced search URL update
-  const debouncedNavigate = useMemo(
-    () =>
-      debounce((searchTerm: string) => {
-        if (searchTerm.length >= 3) {
-          navigateToSearch('donor', searchTerm);
-        } else if (searchTerm.length === 0) {
-          navigateToSearch('donor');
-        }
-      }, 500),
-    [navigateToSearch]
-  );
 
   // Listen for donor selection from command palette
   useEffect(() => {
@@ -107,19 +101,26 @@ export default function DonorSearch() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    await search();
+    // Update hook state and trigger search
+    setQuery(inputValue);
+    if (inputValue.length >= 3) {
+      await search(inputValue);
+      navigateToSearch('donor', inputValue);
+    } else if (inputValue.length === 0) {
+      navigateToSearch('donor');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    debouncedNavigate(value);
+    // Only update local state - search happens on button click or Enter
+    setInputValue(e.target.value);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      search();
+      // Trigger the same logic as clicking Search button
+      handleSearch(e as any);
     }
   };
 
@@ -160,20 +161,20 @@ export default function DonorSearch() {
             <Input
               type="text"
               placeholder="Enter donor name (minimum 3 characters, e.g., Boeing, AT&T)"
-              value={query}
+              value={inputValue}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               className="flex-1"
             />
             <Button
               type="submit"
-              disabled={isSearching || query.length < 3}
+              disabled={isSearching || inputValue.length < 3}
             >
               {isSearching ? 'Searching...' : 'Search'}
             </Button>
           </form>
 
-          {query.length > 0 && query.length < 3 && (
+          {inputValue.length > 0 && inputValue.length < 3 && (
             <p className="text-sm text-amber-600 mt-2">
               Please enter at least 3 characters to search
             </p>

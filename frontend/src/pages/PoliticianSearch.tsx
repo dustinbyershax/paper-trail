@@ -3,7 +3,7 @@
  * Allows users to search for politicians and view their voting records and donation data
  * Supports comparison mode for side-by-side politician analysis
  */
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { usePoliticianSearch } from '../hooks/usePoliticianSearch';
 import { PoliticianCard } from '../components/PoliticianCard';
 import { PoliticianDetails } from '../components/PoliticianDetails';
@@ -15,7 +15,6 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Badge } from '../components/ui/badge';
 import { Search, GitCompare, X } from 'lucide-react';
 import { useRouteState } from '../utils/routing';
-import { debounce } from '../utils/debounce';
 import { api } from '../services/api';
 import type { Politician } from '../types/api';
 
@@ -47,6 +46,9 @@ export default function PoliticianSearch() {
   } = useRouteState();
 
   const [comparisonMode, setComparisonMode] = useState(false);
+
+  // Local input state - this is the source of truth for the input field
+  const [inputValue, setInputValue] = useState(query);
 
   // Hydrate state from URL on mount and URL changes
   useEffect(() => {
@@ -98,12 +100,17 @@ export default function PoliticianSearch() {
         }
       } else if (searchQuery && searchQuery !== query) {
         // Set search query from URL
+        setInputValue(searchQuery);
         setQuery(searchQuery);
+        // Trigger search if query is valid
+        if (searchQuery.length >= 2) {
+          search(searchQuery);
+        }
       }
     };
 
     loadFromUrl();
-  }, [entityId, comparisonIds, searchQuery, politicians]);
+  }, [entityId, comparisonIds, searchQuery]);
 
   // Sync URL when politician is selected
   useEffect(() => {
@@ -120,19 +127,6 @@ export default function PoliticianSearch() {
     }
   }, [isComparing, comparisonIds.length, comparisonPoliticians, navigateToComparison]);
 
-  // Debounced search URL update
-  const debouncedNavigate = useMemo(
-    () =>
-      debounce((searchTerm: string) => {
-        if (searchTerm.length >= 2) {
-          navigateToSearch('politician', searchTerm);
-        } else if (searchTerm.length === 0) {
-          navigateToSearch('politician');
-        }
-      }, 500),
-    [navigateToSearch]
-  );
-
   // Listen for politician selection from command palette
   useEffect(() => {
     const handleCommandSelection = (event: Event) => {
@@ -146,19 +140,26 @@ export default function PoliticianSearch() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    await search();
+    // Update hook state and trigger search
+    setQuery(inputValue);
+    if (inputValue.length >= 2) {
+      await search(inputValue);
+      navigateToSearch('politician', inputValue);
+    } else if (inputValue.length === 0) {
+      navigateToSearch('politician');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    debouncedNavigate(value);
+    // Only update local state - search happens on button click or Enter
+    setInputValue(e.target.value);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      search();
+      // Trigger the same logic as clicking Search button
+      handleSearch(e as any);
     }
   };
 
@@ -219,20 +220,20 @@ export default function PoliticianSearch() {
             <Input
               type="text"
               placeholder="Enter politician name (minimum 2 characters)"
-              value={query}
+              value={inputValue}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               className="flex-1"
             />
             <Button
               type="submit"
-              disabled={isLoading || query.length < 2}
+              disabled={isLoading || inputValue.length < 2}
             >
               {isLoading ? 'Searching...' : 'Search'}
             </Button>
           </form>
 
-          {query.length > 0 && query.length < 2 && (
+          {inputValue.length > 0 && inputValue.length < 2 && (
             <p className="text-sm text-amber-600 mt-2">
               Please enter at least 2 characters to search
             </p>

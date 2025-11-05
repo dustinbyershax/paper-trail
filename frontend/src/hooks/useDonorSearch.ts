@@ -17,7 +17,7 @@
  * @property selectDonor - Function to select a donor and load their donations
  * @property clearSelection - Function to deselect current donor
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import type { Donor, Donation } from '../types/api';
 
@@ -55,8 +55,9 @@ export function useDonorSearch(): UseDonorSearchResult {
     };
   }, []);
 
-  const search = async () => {
-    if (query.length < 3) {
+  const search = useCallback(async (searchQuery?: string) => {
+    const queryToSearch = searchQuery ?? query;
+    if (queryToSearch.length < 3) {
       setDonors([]);
       return;
     }
@@ -65,7 +66,7 @@ export function useDonorSearch(): UseDonorSearchResult {
     setSearchError(null);
 
     try {
-      const results = await api.searchDonors(query);
+      const results = await api.searchDonors(queryToSearch);
       setDonors(results);
     } catch (err) {
       setSearchError(err instanceof Error ? err.message : 'Search failed');
@@ -73,7 +74,7 @@ export function useDonorSearch(): UseDonorSearchResult {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [query]);
 
   const selectDonor = async (donor: Donor) => {
     // Cancel previous request if still pending

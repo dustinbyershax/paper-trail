@@ -3,6 +3,7 @@
  * Provides URL building and parsing functions for politician and donor routes.
  */
 
+import { useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 /**
@@ -82,6 +83,35 @@ export function useRouteState(): RouteState {
   const params = useParams();
   const [searchParams] = useSearchParams();
 
+  const navigateToEntity = useCallback(
+    (id: string | number, entityType: EntityType) => {
+      const url =
+        entityType === 'politician'
+          ? buildPoliticianUrl(Number(id))
+          : buildDonorUrl(Number(id));
+      navigate(url, { replace: true });
+    },
+    [navigate]
+  );
+
+  const navigateToComparison = useCallback(
+    (ids: number[]) => {
+      navigate(buildComparisonUrl(ids), { replace: true });
+    },
+    [navigate]
+  );
+
+  const navigateToSearch = useCallback(
+    (entityType: EntityType, query?: string) => {
+      navigate(buildSearchUrl(entityType, query));
+    },
+    [navigate]
+  );
+
+  const navigateBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
   return {
     // Route parameters
     entityId: params.id,
@@ -90,25 +120,10 @@ export function useRouteState(): RouteState {
     searchQuery: searchParams.get('search') || undefined,
     comparisonIds: parseComparisonIds(searchParams.get('ids')),
 
-    // Navigation helpers with minimal history (replace: true)
-    navigateToEntity: (id: string | number, entityType: EntityType) => {
-      const url =
-        entityType === 'politician'
-          ? buildPoliticianUrl(Number(id))
-          : buildDonorUrl(Number(id));
-      navigate(url, { replace: true });
-    },
-
-    navigateToComparison: (ids: number[]) => {
-      navigate(buildComparisonUrl(ids), { replace: true });
-    },
-
-    navigateToSearch: (entityType: EntityType, query?: string) => {
-      navigate(buildSearchUrl(entityType, query));
-    },
-
-    navigateBack: () => {
-      navigate(-1);
-    },
+    // Navigation helpers (memoized to prevent unnecessary re-renders)
+    navigateToEntity,
+    navigateToComparison,
+    navigateToSearch,
+    navigateBack,
   };
 }
