@@ -23,24 +23,6 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   /**
-   * Get a specific politician by ID
-   * @param politicianId - The politician's ID
-   * @returns Politician object
-   */
-  getPolitician: async (politicianId: string): Promise<Politician> => {
-    return fetchJSON<Politician>(`/api/politician/${politicianId}`);
-  },
-
-  /**
-   * Get a specific donor by ID
-   * @param donorId - The donor's ID
-   * @returns Donor object
-   */
-  getDonor: async (donorId: number): Promise<Donor> => {
-    return fetchJSON<Donor>(`/api/donor/${donorId}`);
-  },
-
-  /**
    * Search for politicians by name
    * @param query - Search query (minimum 2 characters)
    * @returns Array of matching politicians

@@ -50,38 +50,33 @@ export default function PoliticianSearch() {
 
   // Hydrate state from URL on mount and URL changes
   useEffect(() => {
-    const loadFromUrl = async () => {
+    const loadFromUrl = () => {
       if (entityId) {
-        // Load politician by ID from URL
-        try {
-          const politician = await api.getPolitician(entityId);
+        // URL contains politician ID, but we need search results first
+        // Find politician in current search results
+        const politician = politicians.find((p) => p.politicianid === entityId);
+        if (politician && selectedPolitician?.politicianid !== entityId) {
           selectPolitician(politician);
-        } catch (err) {
-          console.error('Failed to load politician from URL:', err);
         }
       } else if (comparisonIds.length >= 2) {
-        // Load comparison mode from URL
-        try {
-          const politicians = await Promise.all(
-            comparisonIds.map((id) => api.getPolitician(id))
-          );
+        // URL contains comparison IDs
+        // Find politicians in current search results
+        const foundPoliticians = comparisonIds
+          .map((id) => politicians.find((p) => p.politicianid === id))
+          .filter((p): p is Politician => p !== undefined);
+
+        if (foundPoliticians.length >= 2) {
           clearSelection();
-          politicians.forEach(toggleComparison);
-        } catch (err) {
-          console.error('Failed to load comparison from URL:', err);
+          foundPoliticians.forEach(toggleComparison);
         }
       } else if (searchQuery && searchQuery !== query) {
         // Set search query from URL
         setQuery(searchQuery);
-        // Trigger search if query is different
-        if (searchQuery.length >= 2) {
-          search();
-        }
       }
     };
 
     loadFromUrl();
-  }, [entityId, comparisonIds, searchQuery]);
+  }, [entityId, comparisonIds, searchQuery, politicians]);
 
   // Sync URL when politician is selected
   useEffect(() => {

@@ -41,30 +41,25 @@ export default function DonorSearch() {
 
   // Hydrate state from URL on mount and URL changes
   useEffect(() => {
-    const loadFromUrl = async () => {
+    const loadFromUrl = () => {
       if (entityId) {
-        // Load donor by ID from URL
-        try {
-          const donorId = parseInt(entityId, 10);
-          if (!isNaN(donorId)) {
-            const donor = await api.getDonor(donorId);
+        // URL contains donor ID, but we need search results first
+        // Find donor in current search results
+        const donorId = parseInt(entityId, 10);
+        if (!isNaN(donorId)) {
+          const donor = donors.find((d) => d.donorid === donorId);
+          if (donor && selectedDonor?.donorid !== donorId) {
             selectDonor(donor);
           }
-        } catch (err) {
-          console.error('Failed to load donor from URL:', err);
         }
       } else if (searchQuery && searchQuery !== query) {
         // Set search query from URL
         setQuery(searchQuery);
-        // Trigger search if query is different
-        if (searchQuery.length >= 3) {
-          search();
-        }
       }
     };
 
     loadFromUrl();
-  }, [entityId, searchQuery]);
+  }, [entityId, searchQuery, donors]);
 
   // Sync URL when donor is selected
   useEffect(() => {
