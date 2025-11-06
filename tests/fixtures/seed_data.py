@@ -536,7 +536,7 @@ def seed_bills(cursor):
         ),
         # Immigration
         (
-            "H.R.6",
+            "H.R.2002",
             "Dream and Promise Act",
             base_date + timedelta(days=155),
             118,
@@ -586,7 +586,7 @@ def seed_bills(cursor):
             ["Criminal Justice", "Sentencing", "Prison Reform"],
         ),
         (
-            "H.R.1",
+            "H.R.2000",
             "First Step Act",
             base_date + timedelta(days=190),
             118,
@@ -608,7 +608,7 @@ def seed_bills(cursor):
         ),
         # Labor & Employment
         (
-            "H.R.2",
+            "H.R.2001",
             "Raise the Wage Act",
             base_date + timedelta(days=205),
             118,
@@ -651,7 +651,7 @@ def seed_bills(cursor):
             ["Foreign Relations", "Israel", "Defense"],
         ),
         (
-            "S.1",
+            "S.2000",
             "Strategic Competition Act",
             base_date + timedelta(days=235),
             118,

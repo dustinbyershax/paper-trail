@@ -21,6 +21,7 @@ sql/*.json
 /votes/
 /bills/
 sql/
+paper-trail-dump
 
 .playwright-mcp
 
