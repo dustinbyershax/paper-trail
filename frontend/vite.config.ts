@@ -6,8 +6,11 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const envDir = path.resolve(__dirname, '..')
   const env = loadEnv(mode, envDir, '')
-  
+
   const backendPort = env.PORT || process.env.PORT || '5001'
+
+  // Docker Compose uses service name 'backend', local dev uses 'localhost'
+  const backendHost = process.env.DOCKER_COMPOSE === 'true' ? 'backend' : 'localhost'
 
   return {
     plugins: [react(), tailwindcss()],
@@ -25,7 +28,7 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: `http://localhost:${backendPort}`,
+          target: `http://${backendHost}:${backendPort}`,
           changeOrigin: true,
           secure: false,
         },

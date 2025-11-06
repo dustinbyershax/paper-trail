@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: paper-trail-db
+    environment:
+      POSTGRES_DB: paper_trail_dev
+      POSTGRES_USER: paper_trail_user
+      POSTGRES_PASSWORD: dev_password_change_in_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paper_trail_user -d paper_trail_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: paper-trail-backend
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: "True"
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: paper_trail_dev
+      DB_USER: paper_trail_user
+      DB_PASSWORD: dev_password_change_in_production
+      PORT: 5001
+      CONGRESS_GOV_API_KEY: ${CONGRESS_GOV_API_KEY:-}
+      VERSION: dev
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./app:/app/app:ro
+      - ./tests:/app/tests:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: flask run --host=0.0.0.0 --port=5001 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: paper-trail-frontend
+    environment:
+      PORT: ${PORT:-5001}
+      DOCKER_COMPOSE: "true"
+      VITE_API_URL: http://localhost:5001
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    depends_on:
+      - backend
+    command: pnpm run dev --host
+
+volumes:
+  postgres_data:
+    name: paper-trail-postgres-data

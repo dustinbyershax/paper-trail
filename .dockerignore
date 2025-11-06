@@ -1,18 +1,75 @@
+# Git
 .git
 .gitignore
-README.md
-*.log
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+
+# Environment variables
 .env
-__pycache__
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
 *.pyc
 *.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 .pytest_cache
 .coverage
 htmlcov/
 .tox/
-.venv
-venv/
+.mypy_cache/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# Docker
 Dockerfile.dev
 docker-compose.yml
+docker-compose*.yml
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+.tmp/
 paper-trail-dump
 *.bz2

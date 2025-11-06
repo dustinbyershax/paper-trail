@@ -1,0 +1,32 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=app.main:app
+
+# Install system dependencies needed for psycopg2 and development
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' --uid 1000 flaskuser && \
+    chown -R flaskuser:flaskuser /app
+
+USER flaskuser
+
+EXPOSE 5001
+
+# Development server with hot reload
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5001", "--reload"]

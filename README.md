@@ -29,47 +29,106 @@ paper-trail/
     └── README.md
 ```
 
-## Local dev set up instructions
+## Quick Start with Docker Compose (Recommended)
 
-**todo** add postgres install or container install instructions and .env
+The easiest way to get started is using Docker Compose, which handles all dependencies automatically.
 
-Create and activate virtual environment
-
-`python -m venv env`
-
-linux/mac
-`source env/bin/activate`
-
-windows
-`source env/Scripts/activate`
-
-install requirements
-`pip install -r requirements.txt`
-
-rename `.dev.env` > `.env` and update with your local values.
-
-launch application
-`python -m app.main`
-
-## Frontend Development
-
-The frontend is a React 19.2 TypeScript application built with Vite.
+### Prerequisites
+- Docker and Docker Compose installed
+- (Optional) Congress.gov API key
 
 ### Setup
 ```bash
-cd frontend
-pnpm install
-pnpm run dev  # Development server on http://localhost:5173
+# Clone the repository
+git clone <repository-url>
+cd paper-trail
+
+# Copy environment template
+cp .env.docker .env
+
+# (Optional) Add your Congress.gov API key to .env
+# CONGRESS_GOV_API_KEY=your_key_here
+
+# Start all services (database, backend, frontend)
+docker compose up
 ```
 
-### Development Workflow
-1. Start Flask backend: `python -m app.main` (port 5001)
-2. Start Vite dev server: `cd frontend && pnpm run dev` (port 5173)
-3. Open http://localhost:5173 in browser
+That's it! The application will be available at:
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:5001
+- **Database:** localhost:5432
+
+Press `Ctrl+C` to stop all services.
+
+### Docker Compose Commands
+```bash
+# Start in detached mode (background)
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+
+# Rebuild after code changes
+docker compose up --build
+
+# Stop and remove volumes (reset database)
+docker compose down -v
+```
+
+### Hot Reload
+Both backend and frontend support hot reload in Docker Compose:
+- Backend: Flask auto-reloads on Python file changes
+- Frontend: Vite auto-reloads on TypeScript/React file changes
+
+## Local Development (Without Docker)
+
+If you prefer to run services locally without Docker:
+
+### Prerequisites
+- Python 3.13+
+- Node.js 24+ (LTS)
+- PostgreSQL 16+
+- pnpm
+
+### Backend Setup
+```bash
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Copy environment template
+cp .dev.env .env
+# Update .env with your PostgreSQL credentials
+```
+
+### Frontend Setup
+```bash
+cd frontend
+pnpm install
+```
+
+### Running Locally
+```bash
+# Terminal 1: Start backend
+python -m app.main  # Runs on port 5001
+
+# Terminal 2: Start frontend
+cd frontend
+pnpm run dev        # Runs on port 5173
+```
+
+Open http://localhost:5173 in your browser.
 
 **Note:** Flask runs on port 5001 to avoid conflicts with macOS AirPlay Receiver.
 
-See `frontend/README.md` for detailed documentation.
+See `frontend/README.md` for detailed frontend documentation.
 
 ## Running Tests
 
