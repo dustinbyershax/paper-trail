@@ -1,43 +1,77 @@
-REPOSITORY TREE
-```
-paper-trail/
-├── .dev.env
-├── .gitignore
-├── README.md
-├── requirements.txt
-├── app/
-└── ├── __init__.py
-    ├── config.py
-    ├── main.py
-    └── templates/
-        ├──.gitkeep
-        ├── donor_search.html
-        └── index.html
-└── bin/
-    ├── bootstrap.sql
-    ├── build_fec_map.py
-    ├── populate_bills.py
-    ├── populate_donors_and_donations.py
-    ├── populate_industries.py
-    ├── populate_politicians.py
-    ├── populate_votes.py
-    └── pg-dump.tar.bz2
-└── frontend/
-    ├── src/
-    ├── package.json
-    ├── vite.config.ts
-    └── README.md
-```
+<!-- <div align="center"> -->
+<table align="center">
+  <tr>
+    <td valign="middle"><img src="frontend/public/favicon.svg" alt="Paper Trail Logo" width="80"></td>
+    <td valign="middle"><h1>Project: Paper Trail</h1></td>
+  </tr>
+</table>
 
-## Quick Start with Docker Compose (Recommended)
+<p align="center">
+  <strong>Track the money behind political votes</strong>
+  <br />
+  A comprehensive platform for exploring relationships between campaign donations and congressional voting records.
+  <br />
+  🏛️ Politicians • 💰 Donations • 🗳️ Votes • 📊 Analysis
+</p>
+
+## 📋 Table of Contents
+
+- [About](#about)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
+
+## About
+
+Paper Trail connects the dots between political contributions and legislative actions. Search for politicians or donors, explore voting records, and discover donation patterns to understand the financial influences on congressional decision-making.
+
+## Features
+
+- ✨ **Politician Search** - Find members of Congress by name and view their profiles
+- 🗳️ **Vote History** - Browse voting records with filtering by bill type and subject
+- 💵 **Donation Tracking** - See who's funding campaigns and how much
+- 🏢 **Industry Analysis** - Analyze donation patterns by industry sector
+- 📊 **Topic Filtering** - Connect donations to specific policy areas (Health, Finance, Technology, etc.)
+- 🔍 **Donor Profiles** - Explore individual and organizational donors
+
+## Tech Stack
+
+**Frontend:**
+- React 19.2 with TypeScript
+- Vite for fast builds and HMR
+- TanStack Query for data fetching
+- React Router for navigation
+- Tailwind CSS 4 for styling
+- shadcn/ui components
+
+**Backend:**
+- Flask (Python 3.13)
+- PostgreSQL 16
+- psycopg2 for database connectivity
+
+**DevOps:**
+- Docker & Docker Compose
+- Multi-stage production builds
+- Hot reload for development
+
+---
+
+## Quick Start
+
+### 🐳 Docker Compose (Recommended)
 
 The easiest way to get started is using Docker Compose, which handles all dependencies automatically.
 
-### Prerequisites
+**Prerequisites:**
 - Docker and Docker Compose installed
 - (Optional) Congress.gov API key
 
-### Setup
+**Setup:**
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -60,7 +94,7 @@ That's it! The application will be available at:
 
 Press `Ctrl+C` to stop all services.
 
-### Docker Compose Commands
+**Useful Commands:**
 ```bash
 # Start in detached mode (background)
 docker compose up -d
@@ -78,22 +112,26 @@ docker compose up --build
 docker compose down -v
 ```
 
-### Hot Reload
+**Hot Reload:**
 Both backend and frontend support hot reload in Docker Compose:
-- Backend: Flask auto-reloads on Python file changes
-- Frontend: Vite auto-reloads on TypeScript/React file changes
+- ⚡ Backend: Flask auto-reloads on Python file changes
+- ⚡ Frontend: Vite auto-reloads on TypeScript/React file changes
 
-## Local Development (Without Docker)
+---
+
+## Development
+
+### 💻 Local Development (Without Docker)
 
 If you prefer to run services locally without Docker:
 
-### Prerequisites
+**Prerequisites:**
 - Python 3.13+
 - Node.js 24+ (LTS)
 - PostgreSQL 16+
 - pnpm
 
-### Backend Setup
+**Backend Setup:**
 ```bash
 # Create and activate virtual environment
 python -m venv .venv
@@ -108,13 +146,13 @@ cp .dev.env .env
 # Update .env with your PostgreSQL credentials
 ```
 
-### Frontend Setup
+**Frontend Setup:**
 ```bash
 cd frontend
 pnpm install
 ```
 
-### Running Locally
+**Running Locally:**
 ```bash
 # Terminal 1: Start backend
 python -m app.main  # Runs on port 5001
@@ -128,13 +166,36 @@ Open http://localhost:5173 in your browser.
 
 **Note:** Flask runs on port 5001 to avoid conflicts with macOS AirPlay Receiver.
 
-See `frontend/README.md` for detailed frontend documentation.
+See [`frontend/README.md`](frontend/README.md) for detailed frontend documentation.
 
-## Running Tests
+### 📁 Project Structure
 
-The project uses [pytest](https://docs.pytest.org/) for testing. The test suite includes comprehensive unit tests for all API endpoints, with fixtures for database setup and test data seeding.
+```
+paper-trail/
+├── app/                    # Flask backend
+│   ├── config.py          # Configuration management
+│   ├── main.py            # API routes and app initialization
+│   └── static/            # Built React app (production)
+├── frontend/              # React frontend
+│   ├── src/               # TypeScript source code
+│   ├── public/            # Static assets
+│   └── vite.config.ts     # Vite configuration
+├── bin/                   # Database scripts and dumps
+├── tests/                 # Backend test suite
+├── docker-compose.yml     # Development orchestration
+├── Dockerfile            # Production multi-stage build
+└── Dockerfile.dev        # Development backend image
+```
 
-### Prerequisites for Testing
+---
+
+## Testing
+
+### 🧪 Running Tests
+
+The project uses [pytest](https://docs.pytest.org/) with comprehensive unit tests for all API endpoints.
+
+**Prerequisites:**
 
 Before running tests, you need:
 
@@ -148,7 +209,7 @@ The test suite will automatically:
 - Seed test data before each test
 - Clean up data between tests to ensure isolation
 
-### Running the Tests
+**Running the Tests:**
 
 With your virtual environment activated and requirements installed:
 
@@ -172,9 +233,7 @@ pytest --cov=app --cov-report=html
 pytest -s
 ```
 
-### Test Structure
-
-The test suite is organized as follows:
+**Test Structure:**
 
 ```
 tests/
@@ -188,9 +247,7 @@ tests/
 └── test_api_votes.py       # Tests for /api/votes endpoints
 ```
 
-### Key Test Fixtures
-
-The test suite provides several pytest fixtures (defined in `conftest.py`):
+**Key Test Fixtures:**
 
 - `client`: A Flask test client for making API requests
 - `db_connection`: A database connection for direct database operations
@@ -198,25 +255,54 @@ The test suite provides several pytest fixtures (defined in `conftest.py`):
 - `clean_db`: Automatically cleans all tables between tests for isolation
 - `setup_test_db`: Creates the test database schema once per test session
 
-### Test Database Safety
+**Test Database Safety:**
 
 The test suite includes multiple safety checks to prevent accidentally running tests against production data:
+- ✅ Tests automatically use a separate database named `paper_trail_test`
+- ✅ The `TESTING` environment variable is set to force test database usage
+- ✅ Runtime checks verify the correct database is being used before tests run
 
-- Tests automatically use a separate database named `paper_trail_test`
-- The `TESTING` environment variable is set to force test database usage
-- Runtime checks verify the correct database is being used before tests run
-
-### Troubleshooting Tests
+**Troubleshooting:**
 
 If tests fail to run:
-
 1. Ensure PostgreSQL is running and accessible
 2. Verify your `.env` file has correct database credentials
 3. Make sure your database user has permissions to create databases
 4. Check that the `bin/bootstrap.sql` file exists and is valid
 5. Try running tests with `-v` flag for more detailed output
 
-### Pod Containers for deployment
+---
+
+## Deployment
+
+### 🚀 Docker Production Build
+
+The project includes a multi-stage Dockerfile that builds both frontend and backend into a single production image:
+
+```bash
+# Build production image
+docker build -t paper-trail:latest .
+
+# Run production container
+docker run -d \
+  -p 5000:5000 \
+  -e DB_HOST=your-db-host \
+  -e DB_NAME=your-db-name \
+  -e DB_USER=your-db-user \
+  -e DB_PASSWORD=your-db-password \
+  -e CONGRESS_GOV_API_KEY=your-api-key \
+  paper-trail:latest
+```
+
+The production build:
+- Stage 1: Builds React frontend with Node 24 + pnpm
+- Stage 2: Combines frontend build with Flask backend
+- Serves frontend from Flask's static folder
+- Uses gunicorn with 4 workers for production
+
+### 🔧 Podman Deployment
+
+For Podman-based deployments:
 
 **Note:** Update port mappings to 5001 if deploying with the development port configuration.
 
@@ -253,11 +339,70 @@ podman run --rm -d --pod=pod-paper-trail --name=paper-trail \
 
 ```
 
-Restore db:
+**Database Restoration:**
 
-```
+```bash
+# Extract database dump
 cd bin
-tar -xvf pg-dump.tar.bz2 
+tar -xvf pg-dump.tar.bz2
+
+# Restore to PostgreSQL
+psql postgres < paper-trail-dump
 ```
 
-This will give you the dump file paper-trail-dump which you can then copy to your postgres db. If using a container, you can copy it into the container then then restore `psql postres < paper-trail-dump` 
+For containerized databases, copy the dump into the container first:
+```bash
+# Copy dump to container
+podman cp paper-trail-dump paper_trail_db:/tmp/
+
+# Restore inside container
+podman exec -it paper_trail_db psql -U paper_trail_user postgres < /tmp/paper-trail-dump
+```
+
+---
+
+## Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes**
+4. **Run tests** to ensure everything works (`pytest`)
+5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+6. **Push to your branch** (`git push origin feature/amazing-feature`)
+7. **Open a Pull Request**
+
+### Development Guidelines
+
+- Follow existing code style and formatting
+- Write tests for new features
+- Update documentation as needed
+- Keep commits focused and descriptive
+- Ensure all tests pass before submitting PR
+
+### Reporting Issues
+
+Found a bug or have a feature request? [Open an issue](https://github.com/Operation-Hope/paper-trail/issues) with:
+- Clear description of the problem/feature
+- Steps to reproduce (for bugs)
+- Expected vs actual behavior
+- Screenshots if applicable
+
+---
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+## Acknowledgments
+
+- Campaign finance data from the Federal Election Commission (FEC)
+- Congressional voting data from Congress.gov
+- Industry categorization based on OpenSecrets methodology
+
+---
+
+**Questions or feedback?** [Open an issue](https://github.com/Operation-Hope/paper-trail/issues) or reach out to the maintainers. 
