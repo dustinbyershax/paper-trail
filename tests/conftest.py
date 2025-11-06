@@ -4,6 +4,11 @@ Provides Flask app client fixture and database connection utilities.
 """
 
 import os
+
+# CRITICAL: Set TESTING environment variable BEFORE importing config
+# This ensures config.py uses the test database
+os.environ["TESTING"] = "true"
+
 import pytest
 import psycopg2
 import psycopg2.extras
@@ -15,8 +20,12 @@ from app import config
 @pytest.fixture(scope="session")
 def setup_test_db():
     """Create test database schema once per test session."""
-    # Set TESTING environment variable
-    os.environ["TESTING"] = "true"
+    # SAFETY CHECK: Verify we're using test database
+    if config.conn_params['dbname'] != 'paper_trail_test':
+        raise RuntimeError(
+            f"DANGER: Tests attempting to use database '{config.conn_params['dbname']}' "
+            f"instead of 'paper_trail_test'. Update app/config.py to check TESTING env var."
+        )
 
     # Connect to test database
     conn = psycopg2.connect(**config.conn_params)
@@ -72,7 +81,6 @@ def setup_test_db():
 @pytest.fixture
 def db_connection(setup_test_db):
     """Provide a database connection for tests."""
-    os.environ["TESTING"] = "true"
     conn = psycopg2.connect(**config.conn_params)
     cursor = conn.cursor()
     cursor.execute("SET search_path TO pt, public;")
@@ -85,7 +93,7 @@ def db_connection(setup_test_db):
 
 
 @pytest.fixture
-def seed_test_data(db_connection):
+def seed_test_data(db_connection, clean_db):
     """Seed comprehensive test data before each test."""
     cursor = db_connection.cursor()
 
