@@ -1,12 +1,12 @@
 import psycopg2
 import psycopg2.extras
 import os
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from app import config
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
 
 # Enable CORS in development only (security requirement)
 if os.getenv('FLASK_ENV') == 'development':
@@ -35,23 +35,6 @@ def get_db_connection():
     conn.commit()
     cursor.close()
     return conn
-
-@app.route('/')
-def index():
-    """Serves the main index.html file."""
-    return render_template('index.html')
-
-@app.route('/donor_search.html')
-def donor_search():
-    """Serves the donor_search.html file."""
-    return render_template('donor_search.html')
-
-# --- NEW ROUTE FOR FEEDBACK PAGE ---
-@app.route('/feedback.html')
-def feedback():
-    """Serves the feedback.html file."""
-    return render_template('feedback.html')
-# -----------------------------------
 
 @app.route('/api/politicians/search')
 def search_politicians():
@@ -512,6 +495,17 @@ def get_all_bill_subjects():
     finally:
         if conn:
             conn.close()
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    """Serve React app for all non-API routes (client-side routing)."""
+    # If the path is a file in the static folder, serve it
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    # Otherwise, serve index.html for React Router to handle
+    return send_from_directory(app.static_folder, 'index.html')
 
 
 if __name__ == "__main__":
