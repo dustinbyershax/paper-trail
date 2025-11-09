@@ -111,7 +111,7 @@ class TestDonationSummarySQLInjection:
     def test_sql_injection_drop_table_in_politician_id(
         self, client, seed_test_data, db_connection
     ):
-        """SQL injection attempt to drop table via politician_id is safely handled."""
+        """SQL injection attempt via politician_id is rejected by Flask type validation."""
         cursor = db_connection.cursor()
 
         # Count rows before injection attempt
@@ -123,8 +123,8 @@ class TestDonationSummarySQLInjection:
         malicious_id = "1'; DROP TABLE Donations; --"
         response = client.get(f"/api/politician/{malicious_id}/donations/summary")
 
-        # Should handle gracefully (500 error for invalid ID format)
-        assert response.status_code in [200, 500]
+        # Flask's <int:> validation rejects non-integer values with 404
+        assert response.status_code == 404, "Should reject non-integer politician_id"
 
         # Verify table still exists and has same row count
         cursor.execute("SELECT COUNT(*) FROM pt.Donations")
@@ -140,14 +140,14 @@ class TestDonationSummarySQLInjection:
     def test_sql_injection_union_select_in_politician_id(
         self, client, seed_test_data, db_connection
     ):
-        """SQL injection UNION SELECT attempt via politician_id is safely handled."""
+        """SQL injection UNION SELECT via politician_id is rejected by Flask type validation."""
         cursor = db_connection.cursor()
 
         malicious_id = "1' UNION SELECT * FROM Donations --"
         response = client.get(f"/api/politician/{malicious_id}/donations/summary")
 
-        # Should handle gracefully
-        assert response.status_code in [200, 500]
+        # Flask's <int:> validation rejects non-integer values with 404
+        assert response.status_code == 404, "Should reject non-integer politician_id"
 
         # Verify data integrity
         cursor.execute("SELECT COUNT(*) FROM pt.Donations")
@@ -158,20 +158,14 @@ class TestDonationSummarySQLInjection:
     def test_sql_injection_or_condition_in_politician_id(
         self, client, seed_test_data, db_connection
     ):
-        """SQL injection OR 1=1 attempt via politician_id is safely handled."""
+        """SQL injection OR 1=1 via politician_id is rejected by Flask type validation."""
         cursor = db_connection.cursor()
 
         malicious_id = "1' OR '1'='1"
         response = client.get(f"/api/politician/{malicious_id}/donations/summary")
 
-        # Should handle gracefully
-        assert response.status_code in [200, 500]
-
-        # If it returns 200, should not return all donations
-        if response.status_code == 200:
-            data = json.loads(response.data)
-            # Should either be empty or error, not all donations
-            assert isinstance(data, list)
+        # Flask's <int:> validation rejects non-integer values with 404
+        assert response.status_code == 404, "Should reject non-integer politician_id"
 
         cursor.close()
 
@@ -349,7 +343,7 @@ class TestFilteredDonationSummarySQLInjection:
     def test_sql_injection_in_politician_id(
         self, client, seed_test_data, db_connection
     ):
-        """SQL injection in politician_id for filtered endpoint is safely handled."""
+        """SQL injection via politician_id for filtered endpoint is rejected by Flask type validation."""
         cursor = db_connection.cursor()
 
         # Count rows before
@@ -361,8 +355,8 @@ class TestFilteredDonationSummarySQLInjection:
             f"/api/politician/{malicious_id}/donations/summary/filtered?topic=Health"
         )
 
-        # Should handle gracefully
-        assert response.status_code in [200, 500]
+        # Flask's <int:> validation rejects non-integer values with 404
+        assert response.status_code == 404, "Should reject non-integer politician_id"
 
         # Verify table integrity
         cursor.execute("SELECT COUNT(*) FROM pt.Donations")
@@ -439,23 +433,27 @@ class TestFilteredDonationSummaryEdgeCases:
         self, client, seed_test_data
     ):
         """Topic with special characters is handled safely."""
+        from urllib.parse import quote
+
         special_topics = [
             "Health%",
             "Finance_",
             "Tech'OR'1'='1",
-            "Energy&Defense",
+            "Energy&Defense",  # & needs URL encoding to be part of topic string
             "Law;DROP TABLE",
         ]
 
         for topic in special_topics:
+            # URL-encode the topic to ensure special chars are part of the parameter value
+            encoded_topic = quote(topic, safe='')
             response = client.get(
-                f"/api/politician/1/donations/summary/filtered?topic={topic}"
+                f"/api/politician/1/donations/summary/filtered?topic={encoded_topic}"
             )
             assert response.status_code == 200, f"Failed for topic: {topic}"
             data = json.loads(response.data)
             assert isinstance(data, list)
-            # Should return empty for invalid topics
-            assert data == []
+            # Should return empty for invalid topics (not in TOPIC_INDUSTRY_MAP)
+            assert data == [], f"Expected empty list for invalid topic '{topic}', got {len(data)} items"
 
     def test_filtered_summary_with_unicode_in_topic(self, client, seed_test_data):
         """Topic with Unicode characters returns empty list."""

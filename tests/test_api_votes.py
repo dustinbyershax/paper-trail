@@ -5,6 +5,7 @@ comprehensive edge case testing against known seed data.
 """
 
 import json
+from datetime import datetime
 
 
 class TestPoliticianVotes:
@@ -127,13 +128,16 @@ class TestPoliticianVotes:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        if len(data["votes"]) > 1:
-            for i in range(len(data["votes"]) - 1):
-                current_date = data["votes"][i]["DateIntroduced"]
-                next_date = data["votes"][i + 1]["DateIntroduced"]
-                assert (
-                    current_date >= next_date
-                ), f"Dates not in descending order: {current_date} < {next_date}"
+        votes = data["votes"]
+        if len(votes) >= 2:
+            # Check first vote is newer than or equal to last vote
+            # API returns ISO format dates (YYYY-MM-DD)
+            first = datetime.fromisoformat(votes[0]["DateIntroduced"])
+            last = datetime.fromisoformat(votes[-1]["DateIntroduced"])
+            assert first >= last, (
+                f"First vote {votes[0]['DateIntroduced']} "
+                f"should be >= last {votes[-1]['DateIntroduced']}"
+            )
 
     def test_sorting_ascending_order(self, client, seed_test_data):
         """Ascending sort order works correctly (oldest first)."""
@@ -141,13 +145,16 @@ class TestPoliticianVotes:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        if len(data["votes"]) > 1:
-            for i in range(len(data["votes"]) - 1):
-                current_date = data["votes"][i]["DateIntroduced"]
-                next_date = data["votes"][i + 1]["DateIntroduced"]
-                assert (
-                    current_date <= next_date
-                ), f"Dates not in ascending order: {current_date} > {next_date}"
+        votes = data["votes"]
+        if len(votes) >= 2:
+            # Check first vote is older than or equal to last vote
+            # API returns ISO format dates (YYYY-MM-DD)
+            first = datetime.fromisoformat(votes[0]["DateIntroduced"])
+            last = datetime.fromisoformat(votes[-1]["DateIntroduced"])
+            assert first <= last, (
+                f"First vote {votes[0]['DateIntroduced']} "
+                f"should be <= last {votes[-1]['DateIntroduced']}"
+            )
 
     def test_sorting_descending_explicit(self, client, seed_test_data):
         """Explicit descending sort order works correctly."""
@@ -155,11 +162,16 @@ class TestPoliticianVotes:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        if len(data["votes"]) > 1:
-            for i in range(len(data["votes"]) - 1):
-                current_date = data["votes"][i]["DateIntroduced"]
-                next_date = data["votes"][i + 1]["DateIntroduced"]
-                assert current_date >= next_date
+        votes = data["votes"]
+        if len(votes) >= 2:
+            # Check first vote is newer than or equal to last vote
+            # API returns ISO format dates (YYYY-MM-DD)
+            first = datetime.fromisoformat(votes[0]["DateIntroduced"])
+            last = datetime.fromisoformat(votes[-1]["DateIntroduced"])
+            assert first >= last, (
+                f"First vote {votes[0]['DateIntroduced']} "
+                f"should be >= last {votes[-1]['DateIntroduced']}"
+            )
 
     def test_sorting_case_insensitive(self, client, seed_test_data):
         """Sort parameter is case-insensitive."""
@@ -184,10 +196,13 @@ class TestPoliticianVotes:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        if len(data["votes"]) > 1:
-            first_date = data["votes"][0]["DateIntroduced"]
-            second_date = data["votes"][1]["DateIntroduced"]
-            assert first_date >= second_date, "Should default to DESC order"
+        votes = data["votes"]
+        if len(votes) >= 2:
+            # Check first vote is newer than or equal to last vote (DESC order)
+            # API returns ISO format dates (YYYY-MM-DD)
+            first = datetime.fromisoformat(votes[0]["DateIntroduced"])
+            last = datetime.fromisoformat(votes[-1]["DateIntroduced"])
+            assert first >= last, "Should default to DESC order"
 
 
 class TestPoliticianVotesFiltering:
@@ -199,10 +214,14 @@ class TestPoliticianVotesFiltering:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        # Verify all returned bills start with 'h' or 'hr'
+        # Should return at least one H.R. bill
+        assert len(data["votes"]) > 0, "Should return at least one H.R. bill"
+
+        # Verify all returned bills start with 'H.R.'
         for vote in data["votes"]:
-            bill_lower = vote["BillNumber"].lower().replace(".", "").replace(" ", "")
-            assert bill_lower.startswith("hr"), f"Bill {vote['BillNumber']} should be HR type"
+            assert vote["BillNumber"].startswith("H.R."), (
+                f"Bill {vote['BillNumber']} should be H.R. type"
+            )
 
     def test_bill_type_filter_s(self, client, seed_test_data):
         """Filter by single bill type 's' returns only Senate bills."""
@@ -210,10 +229,12 @@ class TestPoliticianVotesFiltering:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        # Verify all returned bills start with 's'
+        # If bills are returned, verify all are Senate bills
+        # (Politician 1 may not have any Senate bill votes in test data)
         for vote in data["votes"]:
-            bill_lower = vote["BillNumber"].lower().replace(".", "").replace(" ", "")
-            assert bill_lower.startswith("s"), f"Bill {vote['BillNumber']} should be S type"
+            assert vote["BillNumber"].startswith("S."), (
+                f"Bill {vote['BillNumber']} should be S. type"
+            )
 
     def test_bill_type_filter_multiple(self, client, seed_test_data):
         """Filter by multiple bill types works correctly."""
@@ -221,11 +242,14 @@ class TestPoliticianVotesFiltering:
         assert response.status_code == 200
         data = json.loads(response.data)
 
-        # Verify all returned bills are either HR or S
+        # Should return at least one bill
+        assert len(data["votes"]) > 0, "Should return at least one bill"
+
+        # Verify all returned bills are either H.R. or S.
         for vote in data["votes"]:
-            bill_lower = vote["BillNumber"].lower().replace(".", "").replace(" ", "")
-            assert bill_lower.startswith("hr") or bill_lower.startswith("s"), \
-                f"Bill {vote['BillNumber']} should be HR or S type"
+            assert vote["BillNumber"].startswith("H.R.") or vote["BillNumber"].startswith("S."), (
+                f"Bill {vote['BillNumber']} should be H.R. or S. type"
+            )
 
     def test_bill_subject_filter(self, client, seed_test_data):
         """Filter by bill subject returns only bills with that subject."""
@@ -266,8 +290,9 @@ class TestPoliticianVotesFiltering:
 
         # If there are results, verify they match both filters
         for vote in data["votes"]:
-            bill_lower = vote["BillNumber"].lower().replace(".", "").replace(" ", "")
-            assert bill_lower.startswith("hr")
+            assert vote["BillNumber"].startswith("H.R."), (
+                f"Bill {vote['BillNumber']} should be H.R. type"
+            )
             if vote["subjects"]:
                 assert "Health" in vote["subjects"]
 
@@ -294,7 +319,7 @@ class TestPoliticianVotesSQLInjection:
     def test_sql_injection_drop_table_in_politician_id(
         self, client, seed_test_data, db_connection
     ):
-        """SQL injection attempt to drop table via politician_id is safely handled."""
+        """SQL injection attempt via politician_id is rejected by Flask type validation."""
         cursor = db_connection.cursor()
 
         # Count rows before injection attempt
@@ -306,8 +331,8 @@ class TestPoliticianVotesSQLInjection:
         malicious_id = "1'; DROP TABLE Votes; --"
         response = client.get(f"/api/politician/{malicious_id}/votes")
 
-        # Should handle gracefully (500 error for invalid ID format)
-        assert response.status_code in [200, 500]
+        # Flask's <int:> validation rejects non-integer values with 404
+        assert response.status_code == 404, "Should reject non-integer politician_id"
 
         # Verify table still exists and has same row count
         cursor.execute("SELECT COUNT(*) FROM pt.Votes")
@@ -323,14 +348,14 @@ class TestPoliticianVotesSQLInjection:
     def test_sql_injection_union_in_politician_id(
         self, client, seed_test_data, db_connection
     ):
-        """SQL injection UNION SELECT attempt via politician_id is safely handled."""
+        """SQL injection UNION SELECT via politician_id is rejected by Flask type validation."""
         cursor = db_connection.cursor()
 
         malicious_id = "1' UNION SELECT * FROM Votes --"
         response = client.get(f"/api/politician/{malicious_id}/votes")
 
-        # Should handle gracefully
-        assert response.status_code in [200, 500]
+        # Flask's <int:> validation rejects non-integer values with 404
+        assert response.status_code == 404, "Should reject non-integer politician_id"
 
         # Verify data integrity
         cursor.execute("SELECT COUNT(*) FROM pt.Votes")

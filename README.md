@@ -34,7 +34,7 @@ Before running tests, you need:
 
 The test suite will automatically:
 - Create a test database named `paper_trail_test`
-- Run the database schema creation from `bin/bootstrap.sql`
+- Restore the database schema from `bin/pg-dump.tar.bz2` (schema only, no data)
 - Seed test data before each test
 - Clean up data between tests to ensure isolation
 

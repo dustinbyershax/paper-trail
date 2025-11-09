@@ -4,8 +4,10 @@ Verifies search functionality, SQL injection protection, and error handling
 against known seed data.
 """
 
+# pylint: disable=unused-argument
+# noqa: F401
+# type: ignore
 import json
-import pytest
 
 
 class TestPoliticiansSearch:
@@ -355,3 +357,215 @@ class TestPoliticiansSearchNegative:
         data = json.loads(response.data)
         # % is used in ILIKE pattern but should be escaped in input
         assert isinstance(data, list)
+
+
+class TestGetPolitician:
+    """Test suite for /api/politician/<int:politician_id> endpoint."""
+
+    def test_get_politician_by_id_success(self, client, seed_test_data):
+        """Get politician by ID returns correct politician data."""
+        # Get a valid politician ID from search
+        search_response = client.get("/api/politicians/search?name=Jo")
+        assert search_response.status_code == 200
+        search_data = json.loads(search_response.data)
+        assert len(search_data) > 0, "Should have at least one politician with 'Jo' in name"
+        politician_id = search_data[0]['politicianid']
+        
+        response = client.get(f"/api/politician/{politician_id}")
+        assert response.status_code == 200
+        data = json.loads(response.data)
+
+        required_fields = [
+            "politicianid",
+            "firstname",
+            "lastname",
+            "party",
+            "state",
+            "role",
+            "isactive",
+        ]
+        for field in required_fields:
+            assert field in data, f"Missing required field: {field}"
+
+        # Verify data types
+        assert isinstance(data['politicianid'], int)
+        assert isinstance(data['firstname'], str)
+        assert isinstance(data['lastname'], str)
+        assert isinstance(data['party'], str)
+        assert isinstance(data['state'], str)
+        assert isinstance(data['role'], str)
+        assert isinstance(data['isactive'], bool)
+
+    def test_get_politician_returns_biden(self, client, seed_test_data):
+        """Get politician by searching for Biden returns correct data."""
+        # Search for Biden to get his ID
+        search_response = client.get("/api/politicians/search?name=Biden")
+        assert search_response.status_code == 200
+        search_data = json.loads(search_response.data)
+        assert len(search_data) > 0, "Should have at least one politician with 'Biden' in name"
+        
+        # Find Biden in the results
+        biden = next((p for p in search_data if p['lastname'] == 'Biden'), search_data[0])
+        politician_id = biden['politicianid']
+        
+        response = client.get(f"/api/politician/{politician_id}")
+        assert response.status_code == 200
+        data = json.loads(response.data)
+
+        # Verify it's Biden
+        assert data['firstname'] == 'Joseph'
+        assert data['lastname'] == 'Biden'
+        assert data['party'] == 'Democrat'
+        assert data['state'] == 'Delaware'
+        assert data['role'] == 'Senator'
+        assert data['isactive'] is True
+
+    def test_get_politician_nonexistent_id(self, client, seed_test_data):
+        """Get politician with nonexistent ID returns 404."""
+        response = client.get("/api/politician/999999999")
+        assert response.status_code == 404
+        data = json.loads(response.data)
+        assert "error" in data
+        assert "not found" in data["error"].lower()
+
+    def test_get_politician_negative_id(self, client, seed_test_data):
+        """Get politician with negative ID returns 404."""
+        response = client.get("/api/politician/-1")
+        assert response.status_code == 404
+        # Flask's <int:> converter rejects negative IDs before reaching the route,
+        # so it returns a 404 HTML page, not JSON
+        # Just verify we get a 404 response
+
+    def test_get_politician_zero_id(self, client, seed_test_data):
+        """Get politician with zero ID returns 404."""
+        response = client.get("/api/politician/0")
+        assert response.status_code == 404
+        data = json.loads(response.data)
+        assert "error" in data
+
+    def test_get_politician_very_large_id(self, client, seed_test_data):
+        """Get politician with very large ID returns 404."""
+        response = client.get("/api/politician/2147483647")
+        assert response.status_code == 404
+        data = json.loads(response.data)
+        assert "error" in data
+
+    def test_get_politician_consistent_response(self, client, seed_test_data):
+        """Multiple requests for same politician return consistent data."""
+        # Get a valid politician ID first
+        search_response = client.get("/api/politicians/search?name=Jo")
+        assert search_response.status_code == 200
+        search_data = json.loads(search_response.data)
+        assert len(search_data) > 0, "Should have at least one politician with 'Jo' in name"
+        politician_id = search_data[0]['politicianid']
+        
+        response1 = client.get(f"/api/politician/{politician_id}")
+        response2 = client.get(f"/api/politician/{politician_id}")
+        response3 = client.get(f"/api/politician/{politician_id}")
+
+        assert response1.status_code == 200
+        assert response2.status_code == 200
+        assert response3.status_code == 200
+
+        data1 = json.loads(response1.data)
+        data2 = json.loads(response2.data)
+        data3 = json.loads(response3.data)
+
+        assert data1 == data2 == data3, "Results should be consistent"
+
+    def test_get_politician_different_ids(self, client, seed_test_data):
+        """Get different politician IDs return different data."""
+        # Get valid politician IDs from search
+        search_response = client.get("/api/politicians/search?name=Jo")
+        assert search_response.status_code == 200
+        search_data = json.loads(search_response.data)
+        assert len(search_data) >= 3, "Should have at least 3 politicians with 'Jo' in name"
+        
+        id1 = search_data[0]['politicianid']
+        id2 = search_data[1]['politicianid']
+        id3 = search_data[2]['politicianid']
+        
+        response1 = client.get(f"/api/politician/{id1}")
+        response2 = client.get(f"/api/politician/{id2}")
+        response3 = client.get(f"/api/politician/{id3}")
+
+        assert response1.status_code == 200
+        assert response2.status_code == 200
+        assert response3.status_code == 200
+
+        data1 = json.loads(response1.data)
+        data2 = json.loads(response2.data)
+        data3 = json.loads(response3.data)
+
+        assert data1['politicianid'] != data2['politicianid']
+        assert data2['politicianid'] != data3['politicianid']
+        assert data1['lastname'] != data2['lastname'] or data1['firstname'] != data2['firstname']
+
+
+class TestGetPoliticianSQLInjection:
+    """SQL injection protection tests for /api/politician/<int:politician_id> endpoint."""
+
+    def test_sql_injection_in_id_parameter(self, client, seed_test_data, db_connection):
+        """SQL injection attempt in ID parameter is safely handled."""
+        cursor = db_connection.cursor()
+
+        # Count politicians before injection attempt
+        cursor.execute("SELECT COUNT(*) FROM pt.Politicians")
+        count_before = cursor.fetchone()[0]
+        assert count_before > 0, "Should have politicians in database"
+
+        # Attempt injection via URL (should fail at route level since it's <int:>)
+        # But test that even if it somehow gets through, it's safe
+        malicious_id = "1; DROP TABLE Politicians; --"
+        # Flask's <int:> converter will reject this, but let's verify
+        response = client.get(f"/api/politician/{malicious_id}")
+        # Should return 404 (not found) or 400 (bad request), not execute SQL
+        assert response.status_code in [404, 400]
+
+        # Verify table still exists and has same row count
+        cursor.execute("SELECT COUNT(*) FROM pt.Politicians")
+        count_after = cursor.fetchone()[0]
+        assert count_after == count_before, "Table row count should be unchanged"
+
+        cursor.close()
+
+    def test_sql_injection_union_in_id(self, client, seed_test_data, db_connection):
+        """SQL injection UNION SELECT attempt in ID is safely handled."""
+        cursor = db_connection.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM pt.Politicians")
+        count_before = cursor.fetchone()[0]
+
+        # Attempt UNION injection (will be rejected by <int:> converter)
+        malicious_id = "1 UNION SELECT * FROM Politicians --"
+        response = client.get(f"/api/politician/{malicious_id}")
+        assert response.status_code in [404, 400]
+
+        # Verify row count unchanged
+        cursor.execute("SELECT COUNT(*) FROM pt.Politicians")
+        count_after = cursor.fetchone()[0]
+        assert count_after == count_before
+
+        cursor.close()
+
+    def test_sql_injection_or_condition_in_id(self, client, seed_test_data, db_connection):
+        """SQL injection OR condition attempt in ID is safely handled."""
+        cursor = db_connection.cursor()
+
+        # Get a valid politician ID first
+        cursor.execute("SELECT PoliticianID FROM pt.Politicians LIMIT 1")
+        result = cursor.fetchone()
+        assert result is not None, "Should have at least one politician"
+        valid_id = result[0]
+
+        # Attempt OR injection (will be rejected by <int:> converter)
+        malicious_id = "1 OR 1=1"
+        response = client.get(f"/api/politician/{malicious_id}")
+        assert response.status_code in [404, 400]
+
+        # Verify normal queries still work
+        cursor.execute("SELECT COUNT(*) FROM pt.Politicians WHERE PoliticianID = %s", (valid_id,))
+        count = cursor.fetchone()[0]
+        assert count == 1, "Normal queries should still work"
+
+        cursor.close()

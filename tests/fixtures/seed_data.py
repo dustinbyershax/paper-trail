@@ -1011,12 +1011,15 @@ def seed_donors(cursor):
     ]
 
     for donor in donors:
+        # Extract values: (Name, DonorType, Employer, Industry, City, State)
+        # Schema has: (name, donortype, employer, state, industry) - no City column
+        name, donortype, employer, industry, _, state = donor
         cursor.execute(
             """
-            INSERT INTO pt.Donors (Name, DonorType, Employer, Industry, City, State)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO pt.Donors (Name, DonorType, Employer, State, Industry)
+            VALUES (%s, %s, %s, %s, %s)
         """,
-            donor,
+            (name, donortype, employer, state, industry),
         )
 
 

@@ -82,6 +82,44 @@ def search_politicians():
         if conn:
             conn.close()
 
+@app.route('/api/politician/<int:politician_id>')
+def get_politician(politician_id):
+    """Gets a single politician by ID."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = """
+            SELECT PoliticianID, FirstName, LastName, Party, State, Role, IsActive
+            FROM Politicians
+            WHERE PoliticianID = %s;
+        """
+        cur.execute(sql, (politician_id,))
+        politician = cur.fetchone()
+        cur.close()
+
+        if politician is None:
+            return jsonify({"error": "Politician not found"}), 404
+
+        # Format keys to lowercase to match the JavaScript
+        return jsonify({
+            "politicianid": politician['politicianid'],
+            "firstname": politician['firstname'],
+            "lastname": politician['lastname'],
+            "party": politician['party'],
+            "state": politician['state'],
+            "role": politician['role'],
+            "isactive": politician['isactive']
+        })
+
+    except (Exception, psycopg2.Error) as e:
+        print(f"Error fetching politician: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
 @app.route('/api/donors/search')
 def search_donors_route():
     """Searches for donors by name."""
@@ -121,6 +159,42 @@ def search_donors_route():
 
     except (Exception, psycopg2.Error) as e:
         print(f"Error searching donors: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/donor/<int:donor_id>')
+def get_donor(donor_id):
+    """Gets a single donor by ID."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+        sql = """
+            SELECT DonorID, Name, DonorType, Employer, State
+            FROM Donors
+            WHERE DonorID = %s;
+        """
+        cur.execute(sql, (donor_id,))
+        donor = cur.fetchone()
+        cur.close()
+
+        if donor is None:
+            return jsonify({"error": "Donor not found"}), 404
+
+        # Format keys to lowercase to match the JavaScript
+        return jsonify({
+            "donorid": donor['donorid'],
+            "name": donor['name'],
+            "donortype": donor['donortype'],
+            "employer": donor['employer'],
+            "state": donor['state']
+        })
+
+    except (Exception, psycopg2.Error) as e:
+        print(f"Error fetching donor: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
@@ -176,7 +250,7 @@ def get_donor_contributions(donor_id):
         if conn:
             conn.close()
 
-@app.route('/api/politician/<string:politician_id>/votes')
+@app.route('/api/politician/<int:politician_id>/votes')
 def get_politician_votes(politician_id):
     """Gets paginated and filtered vote history for a politician."""
     conn = None
@@ -197,20 +271,32 @@ def get_politician_votes(politician_id):
         where_clauses = ["v.PoliticianID = %s"]
         params = [politician_id]
 
-        # --- NEW Bill Type Filter Logic ---
+        # Bill type mapping from frontend format to database format
+        BILL_TYPE_MAP = {
+            'hr': 'H.R.%',
+            's': 'S.%',
+            'hjres': 'H.J.Res.%',
+            'sjres': 'S.J.Res.%',
+            'hconres': 'H.Con.Res.%',
+            'sconres': 'S.Con.Res.%',
+            'hres': 'H.Res.%',
+            'sres': 'S.Res.%'
+        }
+
         if bill_types:
             # Build OR conditions for bill numbers starting with the types
-            # Example: "(b.BillNumber ILIKE 'hr %' OR b.BillNumber ILIKE 's %')"
+            # Example: "(b.BillNumber ILIKE 'H.R.%' OR b.BillNumber ILIKE 'S.%')"
             type_conditions = []
             for bill_type in bill_types:
-                # Add a condition like "b.BillNumber ILIKE %s"
-                type_conditions.append("b.BillNumber ILIKE %s")
-                # Add the corresponding pattern like 'hr %' to params
-                params.append(f"{bill_type}%")
-            
-            # Join the conditions with OR and wrap in parentheses
-            where_clauses.append(f"({' OR '.join(type_conditions)})")
-        # --- END NEW Bill Type Filter Logic ---
+                # Map lowercase type to actual bill number format
+                pattern = BILL_TYPE_MAP.get(bill_type.lower())
+                if pattern:
+                    type_conditions.append("b.BillNumber ILIKE %s")
+                    params.append(pattern)
+
+            # Only add filter if we have valid bill types
+            if type_conditions:
+                where_clauses.append(f"({' OR '.join(type_conditions)})")
 
         if bill_subjects:
             where_clauses.append("b.subjects && %s")
@@ -242,12 +328,17 @@ def get_politician_votes(politician_id):
 
         votes_list = []
         for row in votes_data:
+            # Convert date to ISO format string for consistent API response
+            date_introduced = row['dateintroduced']
+            if hasattr(date_introduced, 'isoformat'):
+                date_introduced = date_introduced.isoformat()
+
             votes_list.append({
                 "VoteID": row['voteid'],
                 "Vote": row['vote'],
                 "BillNumber": row['billnumber'],
                 "Title": row['title'],
-                "DateIntroduced": row['dateintroduced'],
+                "DateIntroduced": date_introduced,
                 "subjects": row['subjects']
             })
 
@@ -271,7 +362,7 @@ def get_politician_votes(politician_id):
         if conn:
             conn.close()
 
-@app.route('/api/politician/<string:politician_id>/donations/summary')
+@app.route('/api/politician/<int:politician_id>/donations/summary')
 def get_donation_summary(politician_id):
     """Gets UNFILTERED donation summary, grouped by INDUSTRY."""
     conn = None
@@ -310,7 +401,7 @@ def get_donation_summary(politician_id):
         if conn:
             conn.close()
 
-@app.route('/api/politician/<string:politician_id>/donations/summary/filtered')
+@app.route('/api/politician/<int:politician_id>/donations/summary/filtered')
 def get_filtered_donation_summary(politician_id):
     """Gets donation summary filtered by a bill topic."""
     topic = request.args.get('topic')
